@@ -10,4 +10,5 @@ public interface ProductRepository {
     Optional<Product> findByBarCode(Integer barCode);
     List<Product> findAll();
     void deleteByBarCode(Integer barCode);
+    List<Product>findByProviderId(Integer providerId);
 }

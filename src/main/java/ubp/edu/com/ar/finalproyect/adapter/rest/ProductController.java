@@ -46,4 +46,12 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
+    // GET /api/products/provider
+
+    @GetMapping("/provider/{id}")
+    public ResponseEntity<List<Product>> getProductsByProvider(@PathVariable Integer id) {
+        List<Product> products = productService.getProductByProvider(id);
+        return ResponseEntity.ok(products);
+    }
+
 }

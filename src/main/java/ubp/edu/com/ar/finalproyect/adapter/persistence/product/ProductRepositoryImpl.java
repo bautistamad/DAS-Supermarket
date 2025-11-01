@@ -107,6 +107,44 @@ public class ProductRepositoryImpl implements ProductRepository {
         jdbcCall.execute(in);
     }
 
+    @Override
+    public List<Product> findByProviderId(Integer providerId) {
+        SqlParameterSource in = new MapSqlParameterSource()
+                .addValue("idProveedor", providerId);
+
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_get_products_by_provider")
+                .withSchemaName("dbo")
+                .returningResultSet("products", BeanPropertyRowMapper.newInstance(ProductEntity.class));
+
+        Map<String, Object> out = jdbcCall.execute(in);
+
+        @SuppressWarnings("unchecked")
+        List<ProductEntity> result = (List<ProductEntity>) out.get("products");
+
+
+        // DEBUG LOGGING - Add these lines
+        System.out.println("=== DEBUG: findByProviderId ===");
+        System.out.println("Provider ID: " + providerId);
+        System.out.println("Result is null: " + (result == null));
+        if (result != null) {
+            System.out.println("Number of ProductEntity objects: " + result.size());
+            for (ProductEntity entity : result) {
+                System.out.println("  - Entity: barCode=" + entity.getCodigoBarra() +
+                        ", name=" + entity.getNombre());
+            }
+        }
+
+
+        if (result != null) {
+            return result.stream()
+                    .map(this::toDomain)
+                    .toList();
+        }
+
+        return List.of();
+    }
+
     // Helper: Entity → Domain
     private Product toDomain(ProductEntity entity) {
         Product product = new Product(

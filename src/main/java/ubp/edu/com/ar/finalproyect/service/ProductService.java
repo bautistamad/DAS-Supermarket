@@ -32,4 +32,8 @@ public class ProductService {
         repository.deleteByBarCode(barCode);
     }
 
+    public List<Product> getProductByProvider(Integer providerId) {
+        return repository.findByProviderId(providerId);
+    }
+
 }
