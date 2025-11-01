@@ -1,31 +1,13 @@
 package ubp.edu.com.ar.finalproyect.adapter.persistence.product;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 
-@Entity
-@Table(name = "Producto")
 public class ProductEntity {
 
-    @Id
-    @Column(name = "codigoBarra")
     private Integer codigoBarra;
-
-    @Column(name = "nombre", nullable = false)
     private String nombre;
-
-    @Column(name = "imagen")
     private String imagen;
-
-    @Column(name = "stockMinimo", nullable = false)
     private Integer stockMinimo;
-
-    @Column(name = "stockMaximo", nullable = false)
     private Integer stockMaximo;
-
-    @Column(name = "stockActual")
     private Integer stockActual;
 
     public ProductEntity() {};
@@ -52,6 +34,5 @@ public class ProductEntity {
     public void setStockMaximo(Integer stockMaximo) { this.stockMaximo = stockMaximo; }
     public Integer getStockActual() { return stockActual; }
     public void setStockActual(Integer stockActual) { this.stockActual = stockActual; }
-
 
 }

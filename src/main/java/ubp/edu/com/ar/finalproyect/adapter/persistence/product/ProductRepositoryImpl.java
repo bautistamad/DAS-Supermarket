@@ -1,45 +1,111 @@
 package ubp.edu.com.ar.finalproyect.adapter.persistence.product;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import ubp.edu.com.ar.finalproyect.domain.Product;
 import ubp.edu.com.ar.finalproyect.port.ProductRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Repository
 public class ProductRepositoryImpl implements ProductRepository {
-    private final ProductJpaRepository jpaRepository;
 
-    public ProductRepositoryImpl(ProductJpaRepository jpaRepository) {
-        this.jpaRepository = jpaRepository;
-    }
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Override
+    @Transactional
     public Product save(Product product) {
-        ProductEntity entity = toEntity(product);
-        ProductEntity saved = jpaRepository.save(entity);
-        return toDomain(saved);
+        SqlParameterSource in = new MapSqlParameterSource()
+                .addValue("codigoBarra", product.getBarCode())
+                .addValue("nombre", product.getName())
+                .addValue("imagen", product.getImage())
+                .addValue("stockMinimo", product.getMinStock())
+                .addValue("stockMaximo", product.getMaxStock())
+                .addValue("stockActual", product.getCurrentStock());
+
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_save_product")
+                .withSchemaName("dbo")
+                .returningResultSet("products", BeanPropertyRowMapper.newInstance(ProductEntity.class));
+
+        Map<String, Object> out = jdbcCall.execute(in);
+
+        @SuppressWarnings("unchecked")
+        List<ProductEntity> result = (List<ProductEntity>) out.get("products");
+
+        if (result != null && !result.isEmpty()) {
+            return toDomain(result.get(0));
+        }
+
+        return product;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Product> findByBarCode(Integer barCode) {
-        return jpaRepository.findById(barCode).map(this::toDomain);
+        SqlParameterSource in = new MapSqlParameterSource()
+                .addValue("codigoBarra", barCode);
+
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_find_product_by_barcode")
+                .withSchemaName("dbo")
+                .returningResultSet("products", BeanPropertyRowMapper.newInstance(ProductEntity.class));
+
+        Map<String, Object> out = jdbcCall.execute(in);
+
+        @SuppressWarnings("unchecked")
+        List<ProductEntity> result = (List<ProductEntity>) out.get("products");
+
+        if (result != null && !result.isEmpty()) {
+            return Optional.of(toDomain(result.get(0)));
+        }
+
+        return Optional.empty();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Product> findAll() {
-        return jpaRepository.findAll().stream()
-                .map(this::toDomain)
-                .collect(Collectors.toList());
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_find_all_products")
+                .withSchemaName("dbo")
+                .returningResultSet("products", BeanPropertyRowMapper.newInstance(ProductEntity.class));
+
+        Map<String, Object> out = jdbcCall.execute();
+
+        @SuppressWarnings("unchecked")
+        List<ProductEntity> result = (List<ProductEntity>) out.get("products");
+
+        if (result != null) {
+            return result.stream()
+                    .map(this::toDomain)
+                    .toList();
+        }
+
+        return List.of();
     }
 
     @Override
+    @Transactional
     public void deleteByBarCode(Integer barCode) {
-        jpaRepository.deleteById(barCode);
-    }
+        SqlParameterSource in = new MapSqlParameterSource()
+                .addValue("codigoBarra", barCode);
 
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_delete_product")
+                .withSchemaName("dbo");
+
+        jdbcCall.execute(in);
+    }
 
     // Helper: Entity → Domain
     private Product toDomain(ProductEntity entity) {

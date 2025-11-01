@@ -1,28 +1,12 @@
 package ubp.edu.com.ar.finalproyect.adapter.persistence.proveedor;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 
-@Entity
-@Table(name = "Proveedor")
 public class ProviderEntity {
 
-    @Id
-    @Column(name = "id")
     private Integer id;
-
-    @Column(name = "nombre")
     private String nombre;
-
-    @Column(name = "servicio")
     private String servicio;
-
-    @Column(name = "tipoServicio")
     private Integer tipoServicio;
-
-    @Column(name = "escala")
     private Integer escala;
 
     public ProviderEntity() {}
@@ -35,17 +19,17 @@ public class ProviderEntity {
         this.escala = escala;
     }
 
-
-    public String getServicio() {
-        return servicio;
+    // Getters
+    public Integer getId() {
+        return id;
     }
 
     public String getNombre() {
         return nombre;
     }
 
-    public Integer getId() {
-        return id;
+    public String getServicio() {
+        return servicio;
     }
 
     public Integer getTipoServicio() {
@@ -54,5 +38,26 @@ public class ProviderEntity {
 
     public Integer getEscala() {
         return escala;
+    }
+
+    // Setters (required for BeanPropertyRowMapper)
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public void setServicio(String servicio) {
+        this.servicio = servicio;
+    }
+
+    public void setTipoServicio(Integer tipoServicio) {
+        this.tipoServicio = tipoServicio;
+    }
+
+    public void setEscala(Integer escala) {
+        this.escala = escala;
     }
 }
