@@ -33,13 +33,13 @@ public class ProductController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // GET /api/product - Get all products
+    // GET /api/products - Get all products
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
-    // DELETE /api/product/{bardCode}
+    // DELETE /api/products/{bardCode}
     @DeleteMapping("/{barCode}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Integer barCode) {
         productService.deleteProduct(barCode);
