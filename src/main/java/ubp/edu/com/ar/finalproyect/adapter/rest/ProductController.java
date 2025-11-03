@@ -18,7 +18,7 @@ public class ProductController {
         this.productService = productService;
     }
 
-    // Post /api/prpducts = Create a new Product
+    // POST /api/products - Create a new Product
     @PostMapping
     public ResponseEntity<Product> save(@RequestBody Product product) {
         Product created = productService.createProduct(product);
@@ -28,9 +28,8 @@ public class ProductController {
     // GET /api/products/{barCode} - Get product by barCode
     @GetMapping("/{barCode}")
     public ResponseEntity<Product> getProduct(@PathVariable Integer barCode) {
-        return productService.getProduct(barCode)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Product product = productService.getProduct(barCode);
+        return ResponseEntity.ok(product);
     }
 
     // GET /api/products - Get all products
@@ -39,15 +38,14 @@ public class ProductController {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
-    // DELETE /api/products/{bardCode}
+    // DELETE /api/products/{barCode}
     @DeleteMapping("/{barCode}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Integer barCode) {
         productService.deleteProduct(barCode);
         return ResponseEntity.noContent().build();
     }
 
-    // GET /api/products/provider
-
+    // GET /api/products/provider/{id} - Get products by provider ID
     @GetMapping("/provider/{id}")
     public ResponseEntity<List<Product>> getProductsByProvider(@PathVariable Integer id) {
         List<Product> products = productService.getProductByProvider(id);

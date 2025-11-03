@@ -36,7 +36,6 @@ public class ProviderController {
     }
 
     // GET /api/providers
-
     @GetMapping
     public ResponseEntity<List<Provider>> getAllProviders() {
         return ResponseEntity.ok(providerService.getAllProviders());
