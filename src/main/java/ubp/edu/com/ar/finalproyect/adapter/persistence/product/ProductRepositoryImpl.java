@@ -155,6 +155,18 @@ public class ProductRepositoryImpl implements ProductRepository {
                 entity.getStockMaximo()
         );
         product.setCurrentStock(entity.getStockActual());
+        if (entity.getFechaActualizacion() != null) {
+            product.setUpdateDate(entity.getFechaActualizacion());
+        }
+        if (entity.getEstado() != null) {
+            product.setEstadoId(entity.getEstado());
+        }
+        if (entity.getEstadoNombre() != null) {
+            product.setEstadoNombre(entity.getEstadoNombre());
+        }
+        if (entity.getEstadoDescripcion() != null) {
+            product.setEstadoDescripcion(entity.getEstadoDescripcion());
+        }
         return product;
     }
 

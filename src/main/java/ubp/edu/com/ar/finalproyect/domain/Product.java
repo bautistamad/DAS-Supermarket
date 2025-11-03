@@ -1,5 +1,7 @@
 package ubp.edu.com.ar.finalproyect.domain;
 
+import java.time.LocalDateTime;
+
 public class  Product {
 
     private Integer barCode;
@@ -8,6 +10,12 @@ public class  Product {
     private Integer minStock;
     private Integer maxStock;
     private Integer currentStock;
+
+    // Fields from ProductoProveedor (only populated when querying by provider)
+    private LocalDateTime updateDate;
+    private Integer estadoId;
+    private String estadoNombre;
+    private String estadoDescripcion;
 
     public Product () {
     }
@@ -76,9 +84,41 @@ public class  Product {
         this.currentStock = currentStock;
     }
 
+    public LocalDateTime getUpdateDate() {
+        return updateDate;
+    }
+
+    public void setUpdateDate(LocalDateTime updateDate) {
+        this.updateDate = updateDate;
+    }
+
+    public Integer getEstadoId() {
+        return estadoId;
+    }
+
+    public void setEstadoId(Integer estadoId) {
+        this.estadoId = estadoId;
+    }
+
+    public String getEstadoNombre() {
+        return estadoNombre;
+    }
+
+    public void setEstadoNombre(String estadoNombre) {
+        this.estadoNombre = estadoNombre;
+    }
+
+    public String getEstadoDescripcion() {
+        return estadoDescripcion;
+    }
+
+    public void setEstadoDescripcion(String estadoDescripcion) {
+        this.estadoDescripcion = estadoDescripcion;
+    }
+
     @Override
     public String toString() {
-        return "Product [barCode=" + barCode + ", name=" + name + ", image=" + image + ", minStock=" + minStock + ", maxStock=" + maxStock + ", currentStock=" + currentStock + "]";
+        return "Product [barCode=" + barCode + ", name=" + name + ", image=" + image + ", minStock=" + minStock + ", maxStock=" + maxStock + ", currentStock=" + currentStock + ", estadoNombre=" + estadoNombre + "]";
     }
 
 }
