@@ -135,7 +135,6 @@ public class ProductRepositoryImpl implements ProductRepository {
             }
         }
 
-
         if (result != null) {
             return result.stream()
                     .map(this::toDomain)
