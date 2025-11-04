@@ -43,7 +43,7 @@ END
 go
 
 -- =============================================
--- Delete Product by Barcode
+-- Delete Producto by Barcode
 -- =============================================
 CREATE PROCEDURE sp_delete_product
     @codigoBarra INT
@@ -56,7 +56,7 @@ WHERE codigoBarra = @codigoBarra;
 END
 
 -- =============================================
--- Delete Provider by ID
+-- Delete Proveedor by ID
 -- =============================================
 CREATE PROCEDURE sp_delete_provider
     @id INT
@@ -70,7 +70,7 @@ END
 go
 
 -- =============================================
--- Find Provider by ID
+-- Find Proveedor by ID
 -- =============================================
 CREATE PROCEDURE sp_find_provider_by_id
     @id INT
@@ -85,7 +85,7 @@ END
 go
 
 -- =============================================
--- Get products by provider
+-- Get productos by proveedor
 -- =============================================
 
 CREATE   PROCEDURE sp_get_products_by_provider
@@ -94,13 +94,13 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Validate that provider exists
+    -- Validate that proveedor exists
     IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
 BEGIN
-            RAISERROR('Provider with id %d does not exist.', 16, 1, @idProveedor);
+            RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
             RETURN;
 END
-    -- Return all products for this provider with estado information
+    -- Return all productos for this proveedor with estado information
 SELECT
     p.codigoBarra,
     p.nombre,
@@ -116,14 +116,14 @@ FROM ProductoProveedor pp
          INNER JOIN Producto p ON pp.codigoProducto = p.codigoBarra
          LEFT JOIN EstadoProducto ep ON pp.estado = ep.id
 WHERE pp.idProveedor = @idProveedor
---       AND pp.estado = 1 Only active products (estado = 1)
+--       AND pp.estado = 1 Only active productos (estado = 1)
 ORDER BY p.nombre;
 END
 go
 
 
 -- =============================================
--- Save Product (INSERT or UPDATE)
+-- Save Producto (INSERT or UPDATE)
 -- =============================================
 CREATE PROCEDURE sp_save_product
     @codigoBarra INT,
@@ -136,7 +136,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Check if product exists
+    -- Check if producto exists
     IF EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoBarra)
 BEGIN
             -- UPDATE
@@ -155,7 +155,7 @@ INSERT INTO Producto (codigoBarra, nombre, imagen, stockMinimo, stockMaximo, sto
 VALUES (@codigoBarra, @nombre, @imagen, @stockMinimo, @stockMaximo, @stockActual);
 END
 
-    -- Return the saved product
+    -- Return the saved producto
 SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
 FROM Producto
 WHERE codigoBarra = @codigoBarra;
@@ -164,7 +164,7 @@ go
 
 
 -- =============================================
--- Save Provider (INSERT or UPDATE)
+-- Save Proveedor (INSERT or UPDATE)
 -- =============================================
 CREATE PROCEDURE sp_save_provider
     @id INT OUTPUT,
@@ -176,7 +176,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Check if provider exists
+    -- Check if proveedor exists
     IF @id IS NOT NULL AND @id > 0 AND EXISTS (SELECT 1 FROM Proveedor WHERE id = @id)
 BEGIN
             -- UPDATE
@@ -196,7 +196,7 @@ VALUES (@nombre, @servicio, @tipoServicio, @escala);
 SET @id = SCOPE_IDENTITY();
 END
 
-    -- Return the saved provider
+    -- Return the saved proveedor
 SELECT id, nombre, servicio, tipoServicio, escala
 FROM Proveedor
 WHERE id = @id;
@@ -204,7 +204,7 @@ END
 go
 
 -- =============================================
--- Assign product to provider
+-- Assign producto to proveedor
 -- =============================================
 CREATE PROCEDURE sp_assign_product_to_provider
     @idProveedor INT,
@@ -214,17 +214,17 @@ CREATE PROCEDURE sp_assign_product_to_provider
 BEGIN
         SET NOCOUNT ON;
 
-        -- Validate that provider exists
+        -- Validate that proveedor exists
         IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
 BEGIN
-                RAISERROR('Provider with id %d does not exist.', 16, 1, @idProveedor);
+                RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
                 RETURN;
 END
 
-        -- Validate that product exists
+        -- Validate that producto exists
         IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoProducto)
 BEGIN
-                RAISERROR('Product with barcode %d does not exist.', 16, 1, @codigoProducto);
+                RAISERROR('Producto with barcode %d does not exist.', 16, 1, @codigoProducto);
                 RETURN;
 END
 
@@ -276,10 +276,10 @@ CREATE PROCEDURE sp_create_pedido
 BEGIN
       SET NOCOUNT ON;
 
-      -- Validate provider exists
+      -- Validate proveedor exists
       IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @proveedor)
 BEGIN
-          RAISERROR('Provider with id %d does not exist.', 16, 1, @proveedor);
+          RAISERROR('Proveedor with id %d does not exist.', 16, 1, @proveedor);
           RETURN;
 END
 
@@ -453,7 +453,7 @@ GO
 
 
 -- =============================================
--- Find pedidos by provider
+-- Find pedidos by proveedor
 -- =============================================
 CREATE PROCEDURE sp_find_pedidos_by_proveedor
     @proveedorId SMALLINT
@@ -461,10 +461,10 @@ CREATE PROCEDURE sp_find_pedidos_by_proveedor
 BEGIN
       SET NOCOUNT ON;
 
-      -- Validate provider exists
+      -- Validate proveedor exists
       IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @proveedorId)
 BEGIN
-          RAISERROR('Provider with id %d does not exist.', 16, 1, @proveedorId);
+          RAISERROR('Proveedor with id %d does not exist.', 16, 1, @proveedorId);
           RETURN;
 END
 

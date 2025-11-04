@@ -8,61 +8,61 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import ubp.edu.com.ar.finalproyect.domain.Provider;
-import ubp.edu.com.ar.finalproyect.port.ProviderRepository;
+import ubp.edu.com.ar.finalproyect.domain.Proveedor;
+import ubp.edu.com.ar.finalproyect.port.ProveedorRepository;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Repository
-public class ProviderRepositoryImpl implements ProviderRepository {
+public class ProveedorRepositoryImpl implements ProveedorRepository {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
-    public Provider save(Provider provider) {
+    public Proveedor save(Proveedor proveedor) {
         SqlParameterSource in = new MapSqlParameterSource()
-                .addValue("id", provider.getId())
-                .addValue("nombre", provider.getName())
-                .addValue("servicio", provider.getService())
-                .addValue("tipoServicio", provider.getServiceType())
-                .addValue("escala", provider.getScale());
+                .addValue("id", proveedor.getId())
+                .addValue("nombre", proveedor.getName())
+                .addValue("servicio", proveedor.getService())
+                .addValue("tipoServicio", proveedor.getServiceType())
+                .addValue("escala", proveedor.getScale());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_save_provider")
                 .withSchemaName("dbo")
-                .returningResultSet("providers", BeanPropertyRowMapper.newInstance(ProviderEntity.class));
+                .returningResultSet("providers", BeanPropertyRowMapper.newInstance(ProveedorEntity.class));
 
         Map<String, Object> out = jdbcCall.execute(in);
 
         @SuppressWarnings("unchecked")
-        List<ProviderEntity> result = (List<ProviderEntity>) out.get("providers");
+        List<ProveedorEntity> result = (List<ProveedorEntity>) out.get("providers");
 
         if (result != null && !result.isEmpty()) {
             return toDomain(result.get(0));
         }
 
-        return provider;
+        return proveedor;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Provider> findById(Integer id) {
+    public Optional<Proveedor> findById(Integer id) {
         SqlParameterSource in = new MapSqlParameterSource()
                 .addValue("id", id);
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_find_provider_by_id")
                 .withSchemaName("dbo")
-                .returningResultSet("providers", BeanPropertyRowMapper.newInstance(ProviderEntity.class));
+                .returningResultSet("providers", BeanPropertyRowMapper.newInstance(ProveedorEntity.class));
 
         Map<String, Object> out = jdbcCall.execute(in);
 
         @SuppressWarnings("unchecked")
-        List<ProviderEntity> result = (List<ProviderEntity>) out.get("providers");
+        List<ProveedorEntity> result = (List<ProveedorEntity>) out.get("providers");
 
         if (result != null && !result.isEmpty()) {
             return Optional.of(toDomain(result.get(0)));
@@ -73,16 +73,16 @@ public class ProviderRepositoryImpl implements ProviderRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Provider> findAll() {
+    public List<Proveedor> findAll() {
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_find_all_providers")
                 .withSchemaName("dbo")
-                .returningResultSet("providers", BeanPropertyRowMapper.newInstance(ProviderEntity.class));
+                .returningResultSet("providers", BeanPropertyRowMapper.newInstance(ProveedorEntity.class));
 
         Map<String, Object> out = jdbcCall.execute();
 
         @SuppressWarnings("unchecked")
-        List<ProviderEntity> result = (List<ProviderEntity>) out.get("providers");
+        List<ProveedorEntity> result = (List<ProveedorEntity>) out.get("providers");
 
         if (result != null) {
             return result.stream()
@@ -107,8 +107,8 @@ public class ProviderRepositoryImpl implements ProviderRepository {
     }
 
     // Helper: Entity → Domain
-    private Provider toDomain(ProviderEntity entity) {
-        return new Provider(
+    private Proveedor toDomain(ProveedorEntity entity) {
+        return new Proveedor(
                 entity.getId(),
                 entity.getNombre(),
                 entity.getServicio(),
@@ -118,13 +118,13 @@ public class ProviderRepositoryImpl implements ProviderRepository {
     }
 
     // Helper: Domain → Entity
-    private ProviderEntity toEntity(Provider provider) {
-        return new ProviderEntity(
-                provider.getId(),
-                provider.getName(),
-                provider.getService(),
-                provider.getServiceType(),
-                provider.getScale()
+    private ProveedorEntity toEntity(Proveedor proveedor) {
+        return new ProveedorEntity(
+                proveedor.getId(),
+                proveedor.getName(),
+                proveedor.getService(),
+                proveedor.getServiceType(),
+                proveedor.getScale()
         );
     }
 }

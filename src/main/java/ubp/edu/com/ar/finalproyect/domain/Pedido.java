@@ -1,36 +1,37 @@
-package ubp.edu.com.ar.finalproyect.adapter.persistence.order;
+package ubp.edu.com.ar.finalproyect.domain;
 
 import java.time.LocalDateTime;
 
-public class OrderEntity {
+public class Pedido {
+
     private Integer id;
-    private Integer estado;
-    private Integer proveedor;
+    private Integer estadoId;
+    private Integer proveedorId;
     private Integer puntuacion;
     private LocalDateTime fechaCreada;
     private LocalDateTime fechaEntrega;
-    private LocalDateTime fechaRegistro;
     private Integer evaluacion;
+    private LocalDateTime fechaRegistro;
 
     // Enriched fields from JOINs
     private String estadoNombre;
     private String estadoDescripcion;
     private String proveedorNombre;
 
-    public OrderEntity() {
+    public Pedido() {
     }
 
-    public OrderEntity(Integer id, Integer estado, Integer proveedor, Integer puntuacion,
-                       LocalDateTime fechaCreada, LocalDateTime fechaEntrega,
-                       LocalDateTime fechaRegistro, Integer evaluacion) {
+    public Pedido(Integer id, Integer estadoId, Integer proveedorId, Integer puntuacion,
+                  LocalDateTime fechaCreada, LocalDateTime fechaEntrega,
+                  Integer evaluacion, LocalDateTime fechaRegistro) {
         this.id = id;
-        this.estado = estado;
-        this.proveedor = proveedor;
+        this.estadoId = estadoId;
+        this.proveedorId = proveedorId;
         this.puntuacion = puntuacion;
         this.fechaCreada = fechaCreada;
         this.fechaEntrega = fechaEntrega;
-        this.fechaRegistro = fechaRegistro;
         this.evaluacion = evaluacion;
+        this.fechaRegistro = fechaRegistro;
     }
 
     public Integer getId() {
@@ -41,20 +42,20 @@ public class OrderEntity {
         this.id = id;
     }
 
-    public Integer getEstado() {
-        return estado;
+    public Integer getEstadoId() {
+        return estadoId;
     }
 
-    public void setEstado(Integer estado) {
-        this.estado = estado;
+    public void setEstadoId(Integer estadoId) {
+        this.estadoId = estadoId;
     }
 
-    public Integer getProveedor() {
-        return proveedor;
+    public Integer getProveedorId() {
+        return proveedorId;
     }
 
-    public void setProveedor(Integer proveedor) {
-        this.proveedor = proveedor;
+    public void setProveedorId(Integer proveedorId) {
+        this.proveedorId = proveedorId;
     }
 
     public Integer getPuntuacion() {
@@ -81,20 +82,20 @@ public class OrderEntity {
         this.fechaEntrega = fechaEntrega;
     }
 
-    public LocalDateTime getFechaRegistro() {
-        return fechaRegistro;
-    }
-
-    public void setFechaRegistro(LocalDateTime fechaRegistro) {
-        this.fechaRegistro = fechaRegistro;
-    }
-
     public Integer getEvaluacion() {
         return evaluacion;
     }
 
     public void setEvaluacion(Integer evaluacion) {
         this.evaluacion = evaluacion;
+    }
+
+    public LocalDateTime getFechaRegistro() {
+        return fechaRegistro;
+    }
+
+    public void setFechaRegistro(LocalDateTime fechaRegistro) {
+        this.fechaRegistro = fechaRegistro;
     }
 
     public String getEstadoNombre() {

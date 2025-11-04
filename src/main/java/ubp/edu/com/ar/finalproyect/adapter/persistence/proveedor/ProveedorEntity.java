@@ -1,7 +1,7 @@
 package ubp.edu.com.ar.finalproyect.adapter.persistence.proveedor;
 
 
-public class ProviderEntity {
+public class ProveedorEntity {
 
     private Integer id;
     private String nombre;
@@ -9,9 +9,9 @@ public class ProviderEntity {
     private Integer tipoServicio;
     private Integer escala;
 
-    public ProviderEntity() {}
+    public ProveedorEntity() {}
 
-    public ProviderEntity(Integer id, String nombre, String servicio, Integer tipoServicio, Integer escala) {
+    public ProveedorEntity(Integer id, String nombre, String servicio, Integer tipoServicio, Integer escala) {
         this.id = id;
         this.nombre = nombre;
         this.servicio = servicio;

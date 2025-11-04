@@ -2,7 +2,7 @@ package ubp.edu.com.ar.finalproyect.domain;
 
 import java.time.LocalDateTime;
 
-public class  Product {
+public class Producto {
 
     private Integer barCode;
     private String name;
@@ -17,13 +17,13 @@ public class  Product {
     private String estadoNombre;
     private String estadoDescripcion;
 
-    public Product () {
+    public Producto() {
     }
 
-    public Product(Product product) {}
+    public Producto(Producto producto) {}
 
-    public Product(Integer barcode, String name, String image,
-                   Integer minStock, Integer maxStock) {
+    public Producto(Integer barcode, String name, String image,
+                    Integer minStock, Integer maxStock) {
         this.barCode = barcode;
         this.name = name;
         this.image = image;
@@ -118,7 +118,7 @@ public class  Product {
 
     @Override
     public String toString() {
-        return "Product [barCode=" + barCode + ", name=" + name + ", image=" + image + ", minStock=" + minStock + ", maxStock=" + maxStock + ", currentStock=" + currentStock + ", estadoNombre=" + estadoNombre + "]";
+        return "Producto [barCode=" + barCode + ", name=" + name + ", image=" + image + ", minStock=" + minStock + ", maxStock=" + maxStock + ", currentStock=" + currentStock + ", estadoNombre=" + estadoNombre + "]";
     }
 
 }

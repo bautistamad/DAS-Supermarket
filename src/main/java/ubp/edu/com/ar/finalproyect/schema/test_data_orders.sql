@@ -3,7 +3,7 @@
 -- =============================================
 
 
--- Insert EstadoProducto (Product States) if not exists
+-- Insert EstadoProducto (Producto States) if not exists
 IF NOT EXISTS (SELECT 1 FROM EstadoProducto WHERE id = 1)
 BEGIN
 INSERT INTO EstadoProducto (nombre, descripcion) VALUES ('Disponible', 'Producto disponible para venta');
@@ -12,7 +12,7 @@ INSERT INTO EstadoProducto (nombre, descripcion) VALUES ('Descontinuado', 'Produ
 END
 GO
 
--- Insert EstadoPedido (Order States)
+-- Insert EstadoPedido (Pedido States)
 IF NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE id = 1)
 BEGIN
 INSERT INTO EstadoPedido (nombre, descripcion) VALUES ('Pendiente', 'Pedido creado, esperando confirmación');

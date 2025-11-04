@@ -1,4 +1,4 @@
-package ubp.edu.com.ar.finalproyect.adapter.persistence.order;
+package ubp.edu.com.ar.finalproyect.adapter.persistence.pedido;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -8,88 +8,88 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import ubp.edu.com.ar.finalproyect.domain.Order;
-import ubp.edu.com.ar.finalproyect.port.OrderRepository;
+import ubp.edu.com.ar.finalproyect.domain.Pedido;
+import ubp.edu.com.ar.finalproyect.port.PedidoRepository;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Repository
-public class OrderRepositoryImpl implements OrderRepository {
+public class PedidoRepositoryImpl implements PedidoRepository {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
-    public Order save(Order order) {
+    public Pedido save(Pedido pedido) {
         SqlParameterSource in = new MapSqlParameterSource()
-                .addValue("estado", order.getEstadoId())
-                .addValue("proveedor", order.getProveedorId())
-                .addValue("puntuacion", order.getPuntuacion())
-                .addValue("fechaEntrega", order.getFechaEntrega())
-                .addValue("evaluacion", order.getEvaluacion());
+                .addValue("estado", pedido.getEstadoId())
+                .addValue("proveedor", pedido.getProveedorId())
+                .addValue("puntuacion", pedido.getPuntuacion())
+                .addValue("fechaEntrega", pedido.getFechaEntrega())
+                .addValue("evaluacion", pedido.getEvaluacion());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_create_pedido")
                 .withSchemaName("dbo")
-                .returningResultSet("pedidos", BeanPropertyRowMapper.newInstance(OrderEntity.class));
+                .returningResultSet("pedidos", BeanPropertyRowMapper.newInstance(PedidoEntity.class));
 
         Map<String, Object> out = jdbcCall.execute(in);
 
         @SuppressWarnings("unchecked")
-        List<OrderEntity> result = (List<OrderEntity>) out.get("pedidos");
+        List<PedidoEntity> result = (List<PedidoEntity>) out.get("pedidos");
 
         if (result != null && !result.isEmpty()) {
             return toDomain(result.get(0));
         }
 
-        return order;
+        return pedido;
     }
 
     @Override
     @Transactional
-    public Order update(Order order) {
+    public Pedido update(Pedido pedido) {
         SqlParameterSource in = new MapSqlParameterSource()
-                .addValue("id", order.getId())
-                .addValue("estado", order.getEstadoId())
-                .addValue("puntuacion", order.getPuntuacion())
-                .addValue("fechaEntrega", order.getFechaEntrega())
-                .addValue("evaluacion", order.getEvaluacion());
+                .addValue("id", pedido.getId())
+                .addValue("estado", pedido.getEstadoId())
+                .addValue("puntuacion", pedido.getPuntuacion())
+                .addValue("fechaEntrega", pedido.getFechaEntrega())
+                .addValue("evaluacion", pedido.getEvaluacion());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_update_pedido")
                 .withSchemaName("dbo")
-                .returningResultSet("pedidos", BeanPropertyRowMapper.newInstance(OrderEntity.class));
+                .returningResultSet("pedidos", BeanPropertyRowMapper.newInstance(PedidoEntity.class));
 
         Map<String, Object> out = jdbcCall.execute(in);
 
         @SuppressWarnings("unchecked")
-        List<OrderEntity> result = (List<OrderEntity>) out.get("pedidos");
+        List<PedidoEntity> result = (List<PedidoEntity>) out.get("pedidos");
 
         if (result != null && !result.isEmpty()) {
             return toDomain(result.get(0));
         }
 
-        return order;
+        return pedido;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Order> findById(Integer id) {
+    public Optional<Pedido> findById(Integer id) {
         SqlParameterSource in = new MapSqlParameterSource()
                 .addValue("id", id);
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_find_pedido_by_id")
                 .withSchemaName("dbo")
-                .returningResultSet("pedidos", BeanPropertyRowMapper.newInstance(OrderEntity.class));
+                .returningResultSet("pedidos", BeanPropertyRowMapper.newInstance(PedidoEntity.class));
 
         Map<String, Object> out = jdbcCall.execute(in);
 
         @SuppressWarnings("unchecked")
-        List<OrderEntity> result = (List<OrderEntity>) out.get("pedidos");
+        List<PedidoEntity> result = (List<PedidoEntity>) out.get("pedidos");
 
         if (result != null && !result.isEmpty()) {
             return Optional.of(toDomain(result.get(0)));
@@ -100,16 +100,16 @@ public class OrderRepositoryImpl implements OrderRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Order> findAll() {
+    public List<Pedido> findAll() {
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_find_all_pedidos")
                 .withSchemaName("dbo")
-                .returningResultSet("pedidos", BeanPropertyRowMapper.newInstance(OrderEntity.class));
+                .returningResultSet("pedidos", BeanPropertyRowMapper.newInstance(PedidoEntity.class));
 
         Map<String, Object> out = jdbcCall.execute();
 
         @SuppressWarnings("unchecked")
-        List<OrderEntity> result = (List<OrderEntity>) out.get("pedidos");
+        List<PedidoEntity> result = (List<PedidoEntity>) out.get("pedidos");
 
         if (result != null) {
             return result.stream()
@@ -135,19 +135,19 @@ public class OrderRepositoryImpl implements OrderRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Order> findByProviderId(Integer providerId) {
+    public List<Pedido> findByProviderId(Integer providerId) {
         SqlParameterSource in = new MapSqlParameterSource()
                 .addValue("proveedorId", providerId);
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_find_pedidos_by_proveedor")
                 .withSchemaName("dbo")
-                .returningResultSet("pedidos", BeanPropertyRowMapper.newInstance(OrderEntity.class));
+                .returningResultSet("pedidos", BeanPropertyRowMapper.newInstance(PedidoEntity.class));
 
         Map<String, Object> out = jdbcCall.execute(in);
 
         @SuppressWarnings("unchecked")
-        List<OrderEntity> result = (List<OrderEntity>) out.get("pedidos");
+        List<PedidoEntity> result = (List<PedidoEntity>) out.get("pedidos");
 
         if (result != null) {
             return result.stream()
@@ -159,8 +159,8 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     // Helper: Entity → Domain
-    private Order toDomain(OrderEntity entity) {
-        Order order = new Order(
+    private Pedido toDomain(PedidoEntity entity) {
+        Pedido pedido = new Pedido(
                 entity.getId(),
                 entity.getEstado(),
                 entity.getProveedor(),
@@ -172,29 +172,29 @@ public class OrderRepositoryImpl implements OrderRepository {
         );
 
         if (entity.getEstadoNombre() != null) {
-            order.setEstadoNombre(entity.getEstadoNombre());
+            pedido.setEstadoNombre(entity.getEstadoNombre());
         }
         if (entity.getEstadoDescripcion() != null) {
-            order.setEstadoDescripcion(entity.getEstadoDescripcion());
+            pedido.setEstadoDescripcion(entity.getEstadoDescripcion());
         }
         if (entity.getProveedorNombre() != null) {
-            order.setProveedorNombre(entity.getProveedorNombre());
+            pedido.setProveedorNombre(entity.getProveedorNombre());
         }
 
-        return order;
+        return pedido;
     }
 
     // Helper: Domain → Entity
-    private OrderEntity toEntity(Order order) {
-        return new OrderEntity(
-                order.getId(),
-                order.getEstadoId(),
-                order.getProveedorId(),
-                order.getPuntuacion(),
-                order.getFechaCreada(),
-                order.getFechaEntrega(),
-                order.getFechaRegistro(),
-                order.getEvaluacion()
+    private PedidoEntity toEntity(Pedido pedido) {
+        return new PedidoEntity(
+                pedido.getId(),
+                pedido.getEstadoId(),
+                pedido.getProveedorId(),
+                pedido.getPuntuacion(),
+                pedido.getFechaCreada(),
+                pedido.getFechaEntrega(),
+                pedido.getFechaRegistro(),
+                pedido.getEvaluacion()
         );
     }
 }

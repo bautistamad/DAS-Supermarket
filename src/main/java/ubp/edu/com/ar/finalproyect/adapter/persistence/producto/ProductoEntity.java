@@ -1,9 +1,9 @@
-package ubp.edu.com.ar.finalproyect.adapter.persistence.product;
+package ubp.edu.com.ar.finalproyect.adapter.persistence.producto;
 
 
 import java.time.LocalDateTime;
 
-public class ProductEntity {
+public class ProductoEntity {
 
     private Integer codigoBarra;
     private String nombre;
@@ -12,7 +12,7 @@ public class ProductEntity {
     private Integer stockMaximo;
     private Integer stockActual;
 
-    // Product State Fields
+    // Producto State Fields
     private LocalDateTime fechaActualizacion;
     private Integer estado;
 
@@ -51,10 +51,10 @@ public class ProductEntity {
     private String estadoNombre;
     private String estadoDescripcion;
 
-    public ProductEntity() {};
+    public ProductoEntity() {};
 
-    public ProductEntity(Integer codigoBarra, String nombre, String imagen,
-                         Integer stockMinimo, Integer stockMaximo, Integer stockActual) {
+    public ProductoEntity(Integer codigoBarra, String nombre, String imagen,
+                          Integer stockMinimo, Integer stockMaximo, Integer stockActual) {
         this.codigoBarra = codigoBarra;
         this.nombre = nombre;
         this.imagen = imagen;

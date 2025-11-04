@@ -10,10 +10,10 @@ import org.springframework.web.context.request.WebRequest;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Handle ProductNotFoundException (404)
-    @ExceptionHandler(ProductNotFoundException.class)
+    // Handle ProductoNotFoundException (404)
+    @ExceptionHandler(ProductoNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleProductNotFound(
-            ProductNotFoundException ex,
+            ProductoNotFoundException ex,
             WebRequest request) {
 
         ErrorResponse error = new ErrorResponse(
@@ -26,10 +26,10 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
-    // Handle ProviderNotFoundException (404)
-    @ExceptionHandler(ProviderNotFoundException.class)
+    // Handle ProveedorNotFoundException (404)
+    @ExceptionHandler(ProveedorNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleProviderNotFound(
-            ProviderNotFoundException ex,
+            ProveedorNotFoundException ex,
             WebRequest request) {
 
         ErrorResponse error = new ErrorResponse(

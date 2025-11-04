@@ -1,6 +1,6 @@
 package ubp.edu.com.ar.finalproyect.domain;
 
-public class Provider {
+public class Proveedor {
 
     private Integer id;
     private String name;
@@ -8,9 +8,9 @@ public class Provider {
     private Integer serviceType;
     private Integer scale;
 
-    public Provider() {}
+    public Proveedor() {}
 
-    public Provider(Integer id, String name, String service, Integer serviceType, Integer scale) {
+    public Proveedor(Integer id, String name, String service, Integer serviceType, Integer scale) {
         this.id = id;
         this.name = name;
         this.service = service;
