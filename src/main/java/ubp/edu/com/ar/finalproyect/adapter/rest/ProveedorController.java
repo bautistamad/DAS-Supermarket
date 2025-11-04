@@ -19,31 +19,31 @@ public class ProveedorController {
         this.proveedorService = proveedorService;
     }
 
-    // POST /api/providers = Create a new Proveedor
+    // POST /api/proveedores = Create a new Proveedor
 
     @PostMapping
-    public ResponseEntity<Proveedor> saveProvider(@RequestBody Proveedor proveedor) {
+    public ResponseEntity<Proveedor> saveProveedor(@RequestBody Proveedor proveedor) {
         Proveedor created = proveedorService.createProveedor(proveedor);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    // GET /api/providers/{id}
+    // GET /api/proveedores/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<Proveedor> getProvider(@PathVariable Integer id) {
+    public ResponseEntity<Proveedor> getProveedor(@PathVariable Integer id) {
         return proveedorService.getProveedor(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // GET /api/providers
+    // GET /api/proveedores
     @GetMapping
-    public ResponseEntity<List<Proveedor>> getAllProviders() {
+    public ResponseEntity<List<Proveedor>> getAllProveedores() {
         return ResponseEntity.ok(proveedorService.getAllProveedores());
     }
 
     // DELETE /api/products/{id}
     @DeleteMapping("{id}")
-    public ResponseEntity<Void> deleteProvider(@PathVariable Integer id) {
+    public ResponseEntity<Void> deleteProveedor(@PathVariable Integer id) {
         proveedorService.deleteProveedor(id);
         return ResponseEntity.noContent().build();
     }
