@@ -263,9 +263,227 @@ WHERE pp.idProveedor = @idProveedor
 END
 go
 
+-- =============================================
+-- Create pedido
+-- =============================================
+CREATE PROCEDURE sp_create_pedido
+    @estado SMALLINT,
+      @proveedor SMALLINT,
+      @puntuacion TINYINT = NULL,
+      @fechaEntrega DATETIME = NULL,
+      @evaluacion SMALLINT = NULL
+  AS
+BEGIN
+      SET NOCOUNT ON;
+
+      -- Validate provider exists
+      IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @proveedor)
+BEGIN
+          RAISERROR('Provider with id %d does not exist.', 16, 1, @proveedor);
+          RETURN;
+END
+
+      -- Validate estado exists
+      IF NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE id = @estado)
+BEGIN
+          RAISERROR('EstadoPedido with id %d does not exist.', 16, 1, @estado);
+          RETURN;
+END
+
+      DECLARE @newId SMALLINT;
+
+INSERT INTO Pedido (estado, proveedor, puntuacion, fechaEntrega, evaluacion)
+VALUES (@estado, @proveedor, @puntuacion, @fechaEntrega, @evaluacion);
+
+SET @newId = SCOPE_IDENTITY();
+
+      -- Return the created pedido with estado and proveedor info
+SELECT
+    p.id,
+    p.estado,
+    ep.nombre AS estadoNombre,
+    ep.descripcion AS estadoDescripcion,
+    p.proveedor,
+    pr.nombre AS proveedorNombre,
+    p.puntuacion,
+    p.fechaCreada,
+    p.fechaEntrega,
+    p.fechaRegistro,
+    p.evaluacion
+FROM Pedido p
+         INNER JOIN EstadoPedido ep ON p.estado = ep.id
+         INNER JOIN Proveedor pr ON p.proveedor = pr.id
+WHERE p.id = @newId;
+END
+GO
+
+
+-- =============================================
+-- Return pedido by id
+-- =============================================
+CREATE PROCEDURE sp_find_pedido_by_id
+    @id SMALLINT
+  AS
+BEGIN
+      SET NOCOUNT ON;
+
+SELECT
+    p.id,
+    p.estado,
+    ep.nombre AS estadoNombre,
+    ep.descripcion AS estadoDescripcion,
+    p.proveedor,
+    pr.nombre AS proveedorNombre,
+    p.puntuacion,
+    p.fechaCreada,
+    p.fechaEntrega,
+    p.fechaRegistro,
+    p.evaluacion
+FROM Pedido p
+         INNER JOIN EstadoPedido ep ON p.estado = ep.id
+         INNER JOIN Proveedor pr ON p.proveedor = pr.id
+WHERE p.id = @id;
+END
+GO
+
+
+-- =============================================
+-- Find all pedidos
+-- =============================================
+CREATE PROCEDURE sp_find_all_pedidos
+    AS
+BEGIN
+      SET NOCOUNT ON;
+
+SELECT
+    p.id,
+    p.estado,
+    ep.nombre AS estadoNombre,
+    ep.descripcion AS estadoDescripcion,
+    p.proveedor,
+    pr.nombre AS proveedorNombre,
+    p.puntuacion,
+    p.fechaCreada,
+    p.fechaEntrega,
+    p.fechaRegistro,
+    p.evaluacion
+FROM Pedido p
+         INNER JOIN EstadoPedido ep ON p.estado = ep.id
+         INNER JOIN Proveedor pr ON p.proveedor = pr.id
+ORDER BY p.fechaCreada DESC;
+END
+GO
+
+
+-- =============================================
+-- Update pedido
+-- =============================================
+CREATE PROCEDURE sp_update_pedido
+    @id SMALLINT,
+      @estado SMALLINT,
+      @puntuacion TINYINT = NULL,
+      @fechaEntrega DATETIME = NULL,
+      @evaluacion SMALLINT = NULL
+  AS
+BEGIN
+      SET NOCOUNT ON;
+
+      -- Validate pedido exists
+      IF NOT EXISTS (SELECT 1 FROM Pedido WHERE id = @id)
+BEGIN
+          RAISERROR('Pedido with id %d does not exist.', 16, 1, @id);
+          RETURN;
+END
+
+      -- Validate estado exists
+      IF NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE id = @estado)
+BEGIN
+          RAISERROR('EstadoPedido with id %d does not exist.', 16, 1, @estado);
+          RETURN;
+END
+
+UPDATE Pedido
+SET estado = @estado,
+    puntuacion = @puntuacion,
+    fechaEntrega = @fechaEntrega,
+    evaluacion = @evaluacion
+WHERE id = @id;
+
+-- Return the updated pedido
+SELECT
+    p.id,
+    p.estado,
+    ep.nombre AS estadoNombre,
+    ep.descripcion AS estadoDescripcion,
+    p.proveedor,
+    pr.nombre AS proveedorNombre,
+    p.puntuacion,
+    p.fechaCreada,
+    p.fechaEntrega,
+    p.fechaRegistro,
+    p.evaluacion
+FROM Pedido p
+         INNER JOIN EstadoPedido ep ON p.estado = ep.id
+         INNER JOIN Proveedor pr ON p.proveedor = pr.id
+WHERE p.id = @id;
+END
+GO
+
+
+-- =============================================
+-- Delete pedido
+-- =============================================
+CREATE PROCEDURE sp_delete_pedido
+    @id SMALLINT
+  AS
+BEGIN
+      SET NOCOUNT ON;
+
+      -- Validate pedido exists
+      IF NOT EXISTS (SELECT 1 FROM Pedido WHERE id = @id)
+BEGIN
+          RAISERROR('Pedido with id %d does not exist.', 16, 1, @id);
+          RETURN;
+END
+
+DELETE FROM Pedido WHERE id = @id;
+END
+GO
 
 
 
+-- =============================================
+-- Find pedidos by provider
+-- =============================================
+CREATE PROCEDURE sp_find_pedidos_by_proveedor
+    @proveedorId SMALLINT
+  AS
+BEGIN
+      SET NOCOUNT ON;
 
+      -- Validate provider exists
+      IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @proveedorId)
+BEGIN
+          RAISERROR('Provider with id %d does not exist.', 16, 1, @proveedorId);
+          RETURN;
+END
 
-
+SELECT
+    p.id,
+    p.estado,
+    ep.nombre AS estadoNombre,
+    ep.descripcion AS estadoDescripcion,
+    p.proveedor,
+    pr.nombre AS proveedorNombre,
+    p.puntuacion,
+    p.fechaCreada,
+    p.fechaEntrega,
+    p.fechaRegistro,
+    p.evaluacion
+FROM Pedido p
+         INNER JOIN EstadoPedido ep ON p.estado = ep.id
+         INNER JOIN Proveedor pr ON p.proveedor = pr.id
+WHERE p.proveedor = @proveedorId
+ORDER BY p.fechaCreada DESC;
+END
+GO
