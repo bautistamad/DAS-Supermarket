@@ -152,6 +152,7 @@ public class ProductoRepositoryImpl implements ProductoRepository {
                 entity.getImagen(),
                 entity.getStockMinimo(),
                 entity.getStockMaximo()
+                
         );
         producto.setCurrentStock(entity.getStockActual());
         if (entity.getFechaActualizacion() != null) {

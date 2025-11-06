@@ -92,3 +92,29 @@ BEGIN
 END
 
 GO
+
+
+-- =============================================
+-- Create HistorialPrecio Table
+-- =============================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'HistorialPrecio')
+BEGIN
+CREATE TABLE HistorialPrecio (
+                                 codigoBarra INT NOT NULL,
+                                 idProveedor INT NOT NULL,
+                                 precio FLOAT NOT NULL,
+                                 fechaInicio DATETIME NOT NULL DEFAULT GETDATE(),
+                                 fechaFin DATETIME NULL,
+                                 CONSTRAINT PK_HistorialPrecio PRIMARY KEY (codigoBarra, idProveedor, fechaInicio),
+                                 CONSTRAINT FK_HistorialPrecio_Producto FOREIGN KEY (codigoBarra) REFERENCES Producto(codigoBarra) ON DELETE CASCADE,
+                                 CONSTRAINT FK_HistorialPrecio_Proveedor FOREIGN KEY (idProveedor) REFERENCES Proveedor(id) ON DELETE CASCADE,
+                                 CONSTRAINT CHK_HistorialPrecio_Precio CHECK (precio >= 0),
+                                 CONSTRAINT CHK_HistorialPrecio_Fechas CHECK (fechaFin IS NULL OR fechaFin > fechaInicio)
+);
+PRINT 'HistorialPrecio table created successfully.';
+END
+ELSE
+BEGIN
+    PRINT 'HistorialPrecio table already exists.';
+END
+GO

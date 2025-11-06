@@ -1,19 +1,24 @@
 package ubp.edu.com.ar.finalproyect.service;
 
 import org.springframework.stereotype.Service;
+import ubp.edu.com.ar.finalproyect.domain.HistorialPrecio;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.exception.ProductoNotFoundException;
+import ubp.edu.com.ar.finalproyect.port.HistorialPrecioRepository;
 import ubp.edu.com.ar.finalproyect.port.ProductoRepository;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ProductoService {
 
     private final ProductoRepository repository;
+    private final HistorialPrecioRepository historialPrecioRepository;
 
-    public ProductoService(ProductoRepository repository) {
+    public ProductoService(ProductoRepository repository, HistorialPrecioRepository historialPrecioRepository) {
         this.repository = repository;
+        this.historialPrecioRepository =historialPrecioRepository;
     }
 
     public Producto createProducto(Producto producto) {
@@ -32,9 +37,17 @@ public class ProductoService {
         return repository.save(producto);
     }
 
-    public Producto getProducto(Integer barCode) {
-        return repository.findByBarCode(barCode)
+    public Producto getProducto(Integer barCode, Boolean priceHistory) {
+
+        Producto product = new Producto();
+        product = repository.findByBarCode(barCode)
             .orElseThrow(() -> new ProductoNotFoundException(barCode));
+
+        if (priceHistory) {
+            product.setPrecios(historialPrecioRepository.findByProducto(barCode));
+        }
+
+        return product;
     }
 
     public List<Producto> getAllProductos() {

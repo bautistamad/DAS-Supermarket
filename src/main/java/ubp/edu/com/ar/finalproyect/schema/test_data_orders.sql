@@ -150,5 +150,65 @@ BEGIN
 END
 GO
 
-PRINT 'Test data for Orders and PedidoProducto loaded successfully!'
+-- =============================================
+-- Insert HistorialPrecio (Price History)
+-- =============================================
+
+-- Producto 1001 (Arroz) - Proveedor 1
+-- Old price (ended)
+IF NOT EXISTS (SELECT 1 FROM HistorialPrecio WHERE codigoBarra = 1001 AND idProveedor = 1 AND fechaInicio = '2024-12-01')
+    INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+    VALUES (1001, 1, 850.50, '2024-12-01', '2025-01-01');
+
+-- Current price (active)
+IF NOT EXISTS (SELECT 1 FROM HistorialPrecio WHERE codigoBarra = 1001 AND idProveedor = 1 AND fechaInicio = '2025-01-01')
+    INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+    VALUES (1001, 1, 920.00, '2025-01-01', NULL);
+
+-- Producto 1002 (Fideos) - Proveedor 1
+-- Old price
+IF NOT EXISTS (SELECT 1 FROM HistorialPrecio WHERE codigoBarra = 1002 AND idProveedor = 1 AND fechaInicio = '2024-11-15')
+    INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+    VALUES (1002, 1, 450.00, '2024-11-15', '2024-12-20');
+
+-- Current price
+IF NOT EXISTS (SELECT 1 FROM HistorialPrecio WHERE codigoBarra = 1002 AND idProveedor = 1 AND fechaInicio = '2024-12-20')
+    INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+    VALUES (1002, 1, 495.75, '2024-12-20', NULL);
+
+-- Producto 1003 (Aceite) - Proveedor 2
+-- Price history
+IF NOT EXISTS (SELECT 1 FROM HistorialPrecio WHERE codigoBarra = 1003 AND idProveedor = 2 AND fechaInicio = '2024-10-01')
+    INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+    VALUES (1003, 2, 1200.00, '2024-10-01', '2024-12-01');
+
+IF NOT EXISTS (SELECT 1 FROM HistorialPrecio WHERE codigoBarra = 1003 AND idProveedor = 2 AND fechaInicio = '2024-12-01')
+    INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+    VALUES (1003, 2, 1350.50, '2024-12-01', '2025-01-15');
+
+-- Current price
+IF NOT EXISTS (SELECT 1 FROM HistorialPrecio WHERE codigoBarra = 1003 AND idProveedor = 2 AND fechaInicio = '2025-01-15')
+    INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+    VALUES (1003, 2, 1425.00, '2025-01-15', NULL);
+
+-- Producto 1004 (Azúcar) - Proveedor 2
+-- Current price only
+IF NOT EXISTS (SELECT 1 FROM HistorialPrecio WHERE codigoBarra = 1004 AND idProveedor = 2 AND fechaInicio = '2024-11-01')
+    INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+    VALUES (1004, 2, 780.00, '2024-11-01', NULL);
+
+-- Producto 1005 (Yerba) - Proveedor 3
+-- Old price
+IF NOT EXISTS (SELECT 1 FROM HistorialPrecio WHERE codigoBarra = 1005 AND idProveedor = 3 AND fechaInicio = '2024-12-10')
+    INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+    VALUES (1005, 3, 1500.00, '2024-12-10', '2025-01-20');
+
+-- Current price
+IF NOT EXISTS (SELECT 1 FROM HistorialPrecio WHERE codigoBarra = 1005 AND idProveedor = 3 AND fechaInicio = '2025-01-20')
+    INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+    VALUES (1005, 3, 1650.00, '2025-01-20', NULL);
+
+GO
+
+PRINT 'Test data for Orders, PedidoProducto, and HistorialPrecio loaded successfully!'
 GO

@@ -3,6 +3,7 @@ package ubp.edu.com.ar.finalproyect.adapter.rest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ubp.edu.com.ar.finalproyect.domain.HistorialPrecio;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.service.ProductoService;
 
@@ -27,8 +28,8 @@ public class ProductoController {
 
     // GET /api/products/{barCode} - Get product by barCode
     @GetMapping("/{barCode}")
-    public ResponseEntity<Producto> getProduct(@PathVariable Integer barCode) {
-        Producto producto = productoService.getProducto(barCode);
+    public ResponseEntity<Producto> getProduct(@PathVariable Integer barCode,  @RequestParam(defaultValue = "false") Boolean history) {
+        Producto producto = productoService.getProducto(barCode, history);
         return ResponseEntity.ok(producto);
     }
 
@@ -45,7 +46,7 @@ public class ProductoController {
         return ResponseEntity.noContent().build();
     }
 
-    // GET /api/products/provider/{id} - Get products by provider ID
+    // GET /api/producto/provider/{id} - Get products by provider ID
     @GetMapping("/proveedor/{id}")
     public ResponseEntity<List<Producto>> getProductsByProvider(@PathVariable Integer id) {
         List<Producto> productos = productoService.getProductoByProveedor(id);

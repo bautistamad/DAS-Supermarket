@@ -1,6 +1,7 @@
 package ubp.edu.com.ar.finalproyect.domain;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class Producto {
 
@@ -17,6 +18,16 @@ public class Producto {
     private String estadoNombre;
     private String estadoDescripcion;
 
+    private List<HistorialPrecio> precios;
+
+    public List<HistorialPrecio> getPrecios() {
+        return precios;
+    }
+
+    public void setPrecios(List<HistorialPrecio> precios) {
+        this.precios = precios;
+    }
+
     public Producto() {
     }
 
@@ -30,6 +41,7 @@ public class Producto {
         this.minStock = minStock;
         this.maxStock = maxStock;
         this.currentStock = currentStock;
+        this.precios = null;
     }
 
     public boolean needsRestock(Integer currentStock) {

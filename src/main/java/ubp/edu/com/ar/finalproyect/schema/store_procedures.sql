@@ -1,3 +1,78 @@
+-- =============================================
+-- Get price history by product
+-- =============================================
+CREATE PROCEDURE sp_get_precio_history_by_product
+    @codigoBarra INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate product exists
+    IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoBarra)
+    BEGIN
+        RAISERROR('Producto with codigoBarra %d does not exist.', 16, 1, @codigoBarra);
+        RETURN;
+    END
+
+    SELECT
+        hp.codigoBarra,
+        hp.idProveedor,
+        pr.nombre AS proveedorNombre,
+        hp.precio,
+        hp.fechaInicio,
+        hp.fechaFin,
+        p.nombre AS productoNombre
+    FROM HistorialPrecio hp
+    INNER JOIN Producto p ON hp.codigoBarra = p.codigoBarra
+    INNER JOIN Proveedor pr ON hp.idProveedor = pr.id
+    WHERE hp.codigoBarra = @codigoBarra
+    ORDER BY hp.fechaInicio DESC;
+END
+GO
+
+
+-- =============================================
+-- Get current price by product and provider
+-- =============================================
+CREATE PROCEDURE sp_get_current_precio_by_product_provider
+    @codigoBarra INT,
+    @idProveedor INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate product exists
+    IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoBarra)
+    BEGIN
+        RAISERROR('Producto with codigoBarra %d does not exist.', 16, 1, @codigoBarra);
+        RETURN;
+    END
+
+    -- Validate provider exists
+    IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
+    BEGIN
+        RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
+        RETURN;
+    END
+
+    SELECT TOP 1
+        hp.codigoBarra,
+        hp.idProveedor,
+        pr.nombre AS proveedorNombre,
+        hp.precio,
+        hp.fechaInicio,
+        hp.fechaFin,
+        p.nombre AS productoNombre
+    FROM HistorialPrecio hp
+    INNER JOIN Producto p ON hp.codigoBarra = p.codigoBarra
+    INNER JOIN Proveedor pr ON hp.idProveedor = pr.id
+    WHERE hp.codigoBarra = @codigoBarra
+      AND hp.idProveedor = @idProveedor
+      AND hp.fechaFin IS NULL
+    ORDER BY hp.fechaInicio DESC;
+END
+GO
+
 
 -- =============================================
 -- Find All Products
