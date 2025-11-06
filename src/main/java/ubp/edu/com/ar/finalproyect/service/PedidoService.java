@@ -2,9 +2,11 @@ package ubp.edu.com.ar.finalproyect.service;
 
 import org.springframework.stereotype.Service;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
+import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
 import ubp.edu.com.ar.finalproyect.exception.PedidoNotFoundException;
 import ubp.edu.com.ar.finalproyect.port.PedidoRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -72,9 +74,30 @@ public class PedidoService {
     }
 
     public List<Pedido> getPedidosByProveedor(Integer providerId) {
+
+        List<Pedido> pedidos = new ArrayList<>();
+
         if (providerId == null) {
             throw new IllegalArgumentException("Proveedor id cannot be null");
         }
-        return repository.findByProviderId(providerId);
+
+        pedidos = repository.findByProviderId(providerId);
+
+        for (Pedido pedido : pedidos) {
+            List<PedidoProducto> pedidosProducto = getProductosByPedido(pedido.getId());
+            pedido.setProductos(pedidosProducto);
+        }
+
+        return pedidos;
+    }
+
+    public List<PedidoProducto> getProductosByPedido(Integer pedidoId) {
+        if (pedidoId == null) {
+            throw new IllegalArgumentException("Pedido id cannot be null");
+        }
+        // Validate pedido exists
+        repository.findById(pedidoId)
+                .orElseThrow(() -> new PedidoNotFoundException(pedidoId));
+        return repository.findProductsByPedidoId(pedidoId);
     }
 }

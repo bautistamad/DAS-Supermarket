@@ -71,3 +71,24 @@ CREATE TABLE Pedido (
                             FOREIGN KEY (proveedor) REFERENCES Proveedor(id)
 );
 GO
+
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'PedidoProducto')
+BEGIN
+CREATE TABLE PedidoProducto (
+                                idPedido INT NOT NULL,
+                                codigoBarra INT NOT NULL,
+                                cantidad INT NOT NULL,
+                                CONSTRAINT PK_PedidoProducto PRIMARY KEY (idPedido, codigoBarra),
+                                CONSTRAINT FK_PedidoProducto_Pedido FOREIGN KEY (idPedido) REFERENCES Pedido(id) ON DELETE CASCADE,
+                                CONSTRAINT FK_PedidoProducto_Producto FOREIGN KEY (codigoBarra) REFERENCES Producto(codigoBarra) ON DELETE CASCADE,
+                                CONSTRAINT CHK_PedidoProducto_Cantidad CHECK (cantidad > 0)
+);
+PRINT 'PedidoProducto table created successfully.';
+END
+ELSE
+BEGIN
+    PRINT 'PedidoProducto table already exists.';
+END
+
+GO

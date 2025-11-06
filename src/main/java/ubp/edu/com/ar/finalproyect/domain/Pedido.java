@@ -1,6 +1,8 @@
 package ubp.edu.com.ar.finalproyect.domain;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Pedido {
 
@@ -17,6 +19,9 @@ public class Pedido {
     private String estadoNombre;
     private String estadoDescripcion;
     private String proveedorNombre;
+
+    // Products in this order
+    private List<PedidoProducto> productos = new ArrayList<>();
 
     public Pedido() {
     }
@@ -120,5 +125,13 @@ public class Pedido {
 
     public void setProveedorNombre(String proveedorNombre) {
         this.proveedorNombre = proveedorNombre;
+    }
+
+    public List<PedidoProducto> getProductos() {
+        return productos;
+    }
+
+    public void setProductos(List<PedidoProducto> productos) {
+        this.productos = productos;
     }
 }

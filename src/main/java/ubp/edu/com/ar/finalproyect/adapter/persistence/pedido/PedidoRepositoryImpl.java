@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
+import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
 import ubp.edu.com.ar.finalproyect.port.PedidoRepository;
 
 import java.util.List;
@@ -156,6 +157,25 @@ public class PedidoRepositoryImpl implements PedidoRepository {
         }
 
         return List.of();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PedidoProducto> findProductsByPedidoId(Integer pedidoId) {
+        SqlParameterSource in = new MapSqlParameterSource()
+                .addValue("idPedido", pedidoId);
+
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_get_products_by_pedido")
+                .withSchemaName("dbo")
+                .returningResultSet("productos", BeanPropertyRowMapper.newInstance(PedidoProducto.class));
+
+        Map<String, Object> out = jdbcCall.execute(in);
+
+        @SuppressWarnings("unchecked")
+        List<PedidoProducto> result = (List<PedidoProducto>) out.get("productos");
+
+        return result != null ? result : List.of();
     }
 
     // Helper: Entity → Domain

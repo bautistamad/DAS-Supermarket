@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
+import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
 import ubp.edu.com.ar.finalproyect.service.PedidoService;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class PedidoController {
 
     // GET /api/pedidos/{id} - Get order by id
     @GetMapping("/{id}")
-    public ResponseEntity<Pedido> getOrder(@PathVariable Integer id) {
+    public ResponseEntity<Pedido> getPedido(@PathVariable Integer id) {
         Pedido pedido = pedidoService.getPedido(id);
         return ResponseEntity.ok(pedido);
     }
@@ -54,10 +55,17 @@ public class PedidoController {
         return ResponseEntity.noContent().build();
     }
 
-    // GET /api/pedidos/provider/{providerId} - Get pedidos by provider
+    // GET /api/pedidos/proveedor/{providerId} - Get pedidos by provider
     @GetMapping("/proveedor/{proveedorId}")
-    public ResponseEntity<List<Pedido>> getpedidosByProvider(@PathVariable Integer proveedorId) {
+    public ResponseEntity<List<Pedido>> getPedidosByProvider(@PathVariable Integer proveedorId) {
         List<Pedido> pedidos = pedidoService.getPedidosByProveedor(proveedorId);
         return ResponseEntity.ok(pedidos);
+    }
+
+    // GET /api/pedidos/{id}/productos - Get all products for a specific pedido
+    @GetMapping("/{id}/productos")
+    public ResponseEntity<List<PedidoProducto>> getProductosByPedido(@PathVariable Integer id) {
+        List<PedidoProducto> productos = pedidoService.getProductosByPedido(id);
+        return ResponseEntity.ok(productos);
     }
 }

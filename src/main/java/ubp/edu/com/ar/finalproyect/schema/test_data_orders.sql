@@ -89,5 +89,66 @@ IF NOT EXISTS (SELECT 1 FROM Pedido WHERE estado = 3 AND proveedor = 3 AND fecha
     INSERT INTO Pedido (estado, proveedor, puntuacion, fechaCreada, fechaEntrega, evaluacion) VALUES (3, 3, NULL, '2025-01-25 08:00:00', NULL, NULL);
 GO
 
-PRINT 'Test data for Orders loaded successfully!'
+-- =============================================
+-- Insert PedidoProducto (Order Items)
+-- =============================================
+-- Get Pedido IDs dynamically and insert products
+DECLARE @Pedido1 INT, @Pedido2 INT, @Pedido3 INT, @Pedido4 INT, @Pedido5 INT;
+
+-- Get Pedido IDs based on unique characteristics
+SELECT @Pedido1 = id FROM Pedido WHERE estado = 1 AND proveedor = 1 AND fechaCreada = '2025-01-15 10:30:00';
+SELECT @Pedido2 = id FROM Pedido WHERE estado = 2 AND proveedor = 1 AND fechaCreada = '2025-01-20 14:15:00';
+SELECT @Pedido3 = id FROM Pedido WHERE estado = 5 AND proveedor = 2 AND fechaCreada = '2025-01-10 09:00:00';
+SELECT @Pedido4 = id FROM Pedido WHERE estado = 5 AND proveedor = 2 AND fechaCreada = '2025-01-18 11:00:00';
+SELECT @Pedido5 = id FROM Pedido WHERE estado = 3 AND proveedor = 3 AND fechaCreada = '2025-01-25 08:00:00';
+
+-- Pedido 1 (Proveedor 1) - Products: 1001 (Arroz), 1002 (Fideos)
+IF @Pedido1 IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM PedidoProducto WHERE idPedido = @Pedido1 AND codigoBarra = 1001)
+        INSERT INTO PedidoProducto (idPedido, codigoBarra, cantidad) VALUES (@Pedido1, 1001, 50);
+
+    IF NOT EXISTS (SELECT 1 FROM PedidoProducto WHERE idPedido = @Pedido1 AND codigoBarra = 1002)
+        INSERT INTO PedidoProducto (idPedido, codigoBarra, cantidad) VALUES (@Pedido1, 1002, 100);
+END
+
+-- Pedido 2 (Proveedor 1) - Products: 1001 (Arroz), 1002 (Fideos)
+IF @Pedido2 IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM PedidoProducto WHERE idPedido = @Pedido2 AND codigoBarra = 1001)
+        INSERT INTO PedidoProducto (idPedido, codigoBarra, cantidad) VALUES (@Pedido2, 1001, 30);
+
+    IF NOT EXISTS (SELECT 1 FROM PedidoProducto WHERE idPedido = @Pedido2 AND codigoBarra = 1002)
+        INSERT INTO PedidoProducto (idPedido, codigoBarra, cantidad) VALUES (@Pedido2, 1002, 75);
+END
+
+-- Pedido 3 (Proveedor 2) - Products: 1003 (Aceite), 1004 (Azúcar) - DELIVERED
+IF @Pedido3 IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM PedidoProducto WHERE idPedido = @Pedido3 AND codigoBarra = 1003)
+        INSERT INTO PedidoProducto (idPedido, codigoBarra, cantidad) VALUES (@Pedido3, 1003, 40);
+
+    IF NOT EXISTS (SELECT 1 FROM PedidoProducto WHERE idPedido = @Pedido3 AND codigoBarra = 1004)
+        INSERT INTO PedidoProducto (idPedido, codigoBarra, cantidad) VALUES (@Pedido3, 1004, 60);
+END
+
+-- Pedido 4 (Proveedor 2) - Products: 1003 (Aceite), 1004 (Azúcar) - DELIVERED
+IF @Pedido4 IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM PedidoProducto WHERE idPedido = @Pedido4 AND codigoBarra = 1003)
+        INSERT INTO PedidoProducto (idPedido, codigoBarra, cantidad) VALUES (@Pedido4, 1003, 25);
+
+    IF NOT EXISTS (SELECT 1 FROM PedidoProducto WHERE idPedido = @Pedido4 AND codigoBarra = 1004)
+        INSERT INTO PedidoProducto (idPedido, codigoBarra, cantidad) VALUES (@Pedido4, 1004, 80);
+END
+
+-- Pedido 5 (Proveedor 3) - Product: 1005 (Yerba)
+IF @Pedido5 IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM PedidoProducto WHERE idPedido = @Pedido5 AND codigoBarra = 1005)
+        INSERT INTO PedidoProducto (idPedido, codigoBarra, cantidad) VALUES (@Pedido5, 1005, 120);
+END
+GO
+
+PRINT 'Test data for Orders and PedidoProducto loaded successfully!'
 GO

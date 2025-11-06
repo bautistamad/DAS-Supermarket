@@ -1,3 +1,4 @@
+
 -- =============================================
 -- Find All Products
 -- =============================================
@@ -319,7 +320,7 @@ GO
 
 
 -- =============================================
--- Return pedido by id
+-- Return pedido by id WITH products
 -- =============================================
 CREATE PROCEDURE sp_find_pedido_by_id
     @id SMALLINT
@@ -338,17 +339,25 @@ SELECT
     p.fechaCreada,
     p.fechaEntrega,
     p.fechaRegistro,
-    p.evaluacion
+    p.evaluacion,
+    -- Product information from PedidoProducto
+    pp.codigoBarra,
+    pp.cantidad,
+    pp.precio,
+    prod.nombre AS productoNombre,
+    prod.imagen AS productoImagen
 FROM Pedido p
          INNER JOIN EstadoPedido ep ON p.estado = ep.id
          INNER JOIN Proveedor pr ON p.proveedor = pr.id
+         LEFT JOIN PedidoProducto pp ON p.id = pp.idPedido
+         LEFT JOIN Producto prod ON pp.codigoBarra = prod.codigoBarra
 WHERE p.id = @id;
 END
 GO
 
 
 -- =============================================
--- Find all pedidos
+-- Find all pedidos WITH products
 -- =============================================
 CREATE PROCEDURE sp_find_all_pedidos
     AS
@@ -366,11 +375,19 @@ SELECT
     p.fechaCreada,
     p.fechaEntrega,
     p.fechaRegistro,
-    p.evaluacion
+    p.evaluacion,
+    -- Product information from PedidoProducto
+    pp.codigoBarra,
+    pp.cantidad,
+    pp.precio,
+    prod.nombre AS productoNombre,
+    prod.imagen AS productoImagen
 FROM Pedido p
          INNER JOIN EstadoPedido ep ON p.estado = ep.id
          INNER JOIN Proveedor pr ON p.proveedor = pr.id
-ORDER BY p.fechaCreada DESC;
+         LEFT JOIN PedidoProducto pp ON p.id = pp.idPedido
+         LEFT JOIN Producto prod ON pp.codigoBarra = prod.codigoBarra
+ORDER BY p.fechaCreada DESC, pp.codigoBarra;
 END
 GO
 
@@ -485,5 +502,35 @@ FROM Pedido p
          INNER JOIN Proveedor pr ON p.proveedor = pr.id
 WHERE p.proveedor = @proveedorId
 ORDER BY p.fechaCreada DESC;
+END
+GO
+
+
+-- =============================================
+-- Get products by pedido
+-- =============================================
+CREATE PROCEDURE sp_get_products_by_pedido
+    @idPedido SMALLINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate pedido exists
+    IF NOT EXISTS (SELECT 1 FROM Pedido WHERE id = @idPedido)
+    BEGIN
+        RAISERROR('Pedido with id %d does not exist.', 16, 1, @idPedido);
+        RETURN;
+    END
+
+    SELECT
+        pp.idPedido,
+        pp.codigoBarra,
+        pp.cantidad,
+        p.nombre AS productoNombre,
+        p.imagen AS productoImagen
+    FROM PedidoProducto pp
+    INNER JOIN Producto p ON pp.codigoBarra = p.codigoBarra
+    WHERE pp.idPedido = @idPedido
+    ORDER BY p.nombre;
 END
 GO
