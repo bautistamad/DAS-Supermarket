@@ -10,9 +10,9 @@ public class Pedido {
     private Integer estadoId;
     private Integer proveedorId;
     private Integer puntuacion;
-    private LocalDateTime fechaCreada;
+    private LocalDateTime fechaEstimada;
     private LocalDateTime fechaEntrega;
-    private Integer evaluacion;
+    private Integer evaluacionEscala;
     private LocalDateTime fechaRegistro;
 
     // Enriched fields from JOINs
@@ -33,9 +33,9 @@ public class Pedido {
         this.estadoId = estadoId;
         this.proveedorId = proveedorId;
         this.puntuacion = puntuacion;
-        this.fechaCreada = fechaCreada;
+        this.fechaEstimada = fechaCreada;
         this.fechaEntrega = fechaEntrega;
-        this.evaluacion = evaluacion;
+        this.evaluacionEscala = evaluacion;
         this.fechaRegistro = fechaRegistro;
     }
 
@@ -71,12 +71,12 @@ public class Pedido {
         this.puntuacion = puntuacion;
     }
 
-    public LocalDateTime getFechaCreada() {
-        return fechaCreada;
+    public LocalDateTime getFechaEstimada() {
+        return fechaEstimada;
     }
 
-    public void setFechaCreada(LocalDateTime fechaCreada) {
-        this.fechaCreada = fechaCreada;
+    public void setFechaEstimada(LocalDateTime fechaEstimada) {
+        this.fechaEstimada = fechaEstimada;
     }
 
     public LocalDateTime getFechaEntrega() {
@@ -87,12 +87,12 @@ public class Pedido {
         this.fechaEntrega = fechaEntrega;
     }
 
-    public Integer getEvaluacion() {
-        return evaluacion;
+    public Integer getEvaluacionEscala() {
+        return evaluacionEscala;
     }
 
-    public void setEvaluacion(Integer evaluacion) {
-        this.evaluacion = evaluacion;
+    public void setEvaluacionEscala(Integer evaluacionEscala) {
+        this.evaluacionEscala = evaluacionEscala;
     }
 
     public LocalDateTime getFechaRegistro() {

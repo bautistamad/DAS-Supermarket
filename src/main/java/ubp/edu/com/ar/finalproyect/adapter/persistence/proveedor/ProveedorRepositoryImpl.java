@@ -21,15 +21,17 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    // TO DO
+    // MODIFICAR DB
     @Override
     @Transactional
     public Proveedor save(Proveedor proveedor) {
         SqlParameterSource in = new MapSqlParameterSource()
                 .addValue("id", proveedor.getId())
                 .addValue("nombre", proveedor.getName())
-                .addValue("servicio", proveedor.getService())
-                .addValue("tipoServicio", proveedor.getServiceType())
-                .addValue("escala", proveedor.getScale());
+                .addValue("apiEndpoint", proveedor.getApiEndpoint())
+                .addValue("tipoServicio", proveedor.getTipoServicio())
+                .addValue("apiKey", proveedor.getApiKey());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_save_provider")
@@ -111,9 +113,9 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
         return new Proveedor(
                 entity.getId(),
                 entity.getNombre(),
-                entity.getServicio(),
+                entity.getApiEndpoint(),
                 entity.getTipoServicio(),
-                entity.getEscala()
+                entity.getApiKey()
         );
     }
 
@@ -122,9 +124,9 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
         return new ProveedorEntity(
                 proveedor.getId(),
                 proveedor.getName(),
-                proveedor.getService(),
-                proveedor.getServiceType(),
-                proveedor.getScale()
+                proveedor.getApiEndpoint(),
+                proveedor.getTipoServicio(),
+                proveedor.getApiKey()
         );
     }
 }

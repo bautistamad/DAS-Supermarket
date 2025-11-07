@@ -30,7 +30,7 @@ public class PedidoRepositoryImpl implements PedidoRepository {
                 .addValue("proveedor", pedido.getProveedorId())
                 .addValue("puntuacion", pedido.getPuntuacion())
                 .addValue("fechaEntrega", pedido.getFechaEntrega())
-                .addValue("evaluacion", pedido.getEvaluacion());
+                .addValue("evaluacion", pedido.getEvaluacionEscala());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_create_pedido")
@@ -57,7 +57,7 @@ public class PedidoRepositoryImpl implements PedidoRepository {
                 .addValue("estado", pedido.getEstadoId())
                 .addValue("puntuacion", pedido.getPuntuacion())
                 .addValue("fechaEntrega", pedido.getFechaEntrega())
-                .addValue("evaluacion", pedido.getEvaluacion());
+                .addValue("evaluacion", pedido.getEvaluacionEscala());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_update_pedido")
@@ -185,9 +185,9 @@ public class PedidoRepositoryImpl implements PedidoRepository {
                 entity.getEstado(),
                 entity.getProveedor(),
                 entity.getPuntuacion(),
-                entity.getFechaCreada(),
+                entity.getFechaEstimada(),
                 entity.getFechaEntrega(),
-                entity.getEvaluacion(),
+                entity.getEvaluacionEscala(),
                 entity.getFechaRegistro()
         );
 
@@ -211,10 +211,10 @@ public class PedidoRepositoryImpl implements PedidoRepository {
                 pedido.getEstadoId(),
                 pedido.getProveedorId(),
                 pedido.getPuntuacion(),
-                pedido.getFechaCreada(),
+                pedido.getFechaEstimada(),
                 pedido.getFechaEntrega(),
                 pedido.getFechaRegistro(),
-                pedido.getEvaluacion()
+                pedido.getEvaluacionEscala()
         );
     }
 }

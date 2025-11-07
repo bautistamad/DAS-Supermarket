@@ -7,5 +7,6 @@ import java.util.Optional;
 
 public interface HistorialPrecioRepository {
     List<HistorialPrecio> findByProducto(Integer codigoBarra);
+
     Optional<HistorialPrecio> findCurrentPrecioByProductoAndProveedor(Integer codigoBarra, Long idProveedor);
 }

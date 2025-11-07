@@ -28,7 +28,7 @@ public class ProductoController {
 
     // GET /api/products/{barCode} - Get product by barCode
     @GetMapping("/{barCode}")
-    public ResponseEntity<Producto> getProduct(@PathVariable Integer barCode,  @RequestParam(defaultValue = "false") Boolean history) {
+    public ResponseEntity<Producto> getProduct(@PathVariable Integer barCode, @RequestParam(defaultValue = "false") Boolean history) {
         Producto producto = productoService.getProducto(barCode, history);
         return ResponseEntity.ok(producto);
     }

@@ -30,9 +30,7 @@ public class ProveedorController {
     // GET /api/proveedores/{id}
     @GetMapping("/{id}")
     public ResponseEntity<Proveedor> getProveedor(@PathVariable Integer id) {
-        return proveedorService.getProveedor(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return proveedorService.getProveedor(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     // GET /api/proveedores
