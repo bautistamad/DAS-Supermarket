@@ -5,12 +5,12 @@ import java.util.List;
 
 public class Producto {
 
-    private Integer barCode;
-    private String name;
-    private String image;
+    private Integer codigoBarra;
+    private String nombre;
+    private String imagen;
     private Integer minStock;
     private Integer maxStock;
-    private Integer currentStock;
+    private Integer actualStock;
 
     // Fields from ProductoProveedor (only populated when querying by provider)
     private LocalDateTime updateDate;
@@ -18,7 +18,24 @@ public class Producto {
     private String estadoNombre;
     private String estadoDescripcion;
 
+    // Fields from HistorialPrecio
     private List<HistorialPrecio> precios;
+
+    public Producto() {
+    }
+
+    public Producto(Producto producto) {
+        this.codigoBarra = producto.getCodigoBarra();
+        this.nombre = producto.getNombre();
+        this.imagen = producto.getImage();
+        this.actualStock = producto.getActualStock();
+        this.minStock = producto.getMinStock();
+        this.maxStock = producto.getMaxStock();
+        this.updateDate = producto.getUpdateDate();
+        this.estadoId = producto.getEstadoId();
+        this.estadoNombre = producto.getEstadoNombre();
+        this.estadoDescripcion = producto.getEstadoDescripcion();
+    }
 
     public List<HistorialPrecio> getPrecios() {
         return precios;
@@ -28,19 +45,14 @@ public class Producto {
         this.precios = precios;
     }
 
-    public Producto() {
-    }
-
-    public Producto(Producto producto) {}
-
-    public Producto(Integer barcode, String name, String image,
-                    Integer minStock, Integer maxStock) {
-        this.barCode = barcode;
-        this.name = name;
-        this.image = image;
+    public Producto(Integer codigoBarra, String nombre, String imagen,
+                    Integer minStock, Integer maxStock, Integer actualStock) {
+        this.codigoBarra = codigoBarra;
+        this.nombre = nombre;
+        this.imagen = imagen;
         this.minStock = minStock;
         this.maxStock = maxStock;
-        this.currentStock = currentStock;
+        this.actualStock = actualStock;
         this.precios = null;
     }
 
@@ -48,28 +60,28 @@ public class Producto {
         return currentStock <= this.minStock;
     }
 
-    public Integer getBarCode() {
-        return barCode;
+    public Integer getCodigoBarra() {
+        return codigoBarra;
     }
 
-    public void setBarCode(Integer barCode) {
-        this.barCode = barCode;
+    public void setCodigoBarra(Integer barCode) {
+        this.codigoBarra = barCode;
     }
 
-    public String getName() {
-        return name;
+    public String getNombre() {
+        return nombre;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setNombre(String name) {
+        this.nombre = name;
     }
 
     public String getImage() {
-        return image;
+        return imagen;
     }
 
     public void setImage(String image) {
-        this.image = image;
+        this.imagen = image;
     }
 
     public Integer getMinStock() {
@@ -88,12 +100,12 @@ public class Producto {
         this.maxStock = maxStock;
     }
 
-    public Integer getCurrentStock() {
-        return currentStock;
+    public Integer getActualStock() {
+        return actualStock;
     }
 
-    public void setCurrentStock(Integer currentStock) {
-        this.currentStock = currentStock;
+    public void setActualStock(Integer actualStock) {
+        this.actualStock = actualStock;
     }
 
     public LocalDateTime getUpdateDate() {
@@ -130,7 +142,7 @@ public class Producto {
 
     @Override
     public String toString() {
-        return "Producto [barCode=" + barCode + ", name=" + name + ", image=" + image + ", minStock=" + minStock + ", maxStock=" + maxStock + ", currentStock=" + currentStock + ", estadoNombre=" + estadoNombre + "]";
+        return "Producto [barCode=" + codigoBarra + ", name=" + nombre + ", image=" + imagen + ", minStock=" + minStock + ", maxStock=" + maxStock + ", currentStock=" + actualStock + ", estadoNombre=" + estadoNombre + "]";
     }
 
 }

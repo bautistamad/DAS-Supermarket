@@ -8,9 +8,9 @@ GO
 CREATE TABLE Proveedor (
                            id INT PRIMARY KEY IDENTITY(1,1),
                            nombre NVARCHAR(255) NOT NULL,
-                           servicio NVARCHAR(255) NULL,
+                           apiEndpoint NVARCHAR(255) NULL,
                            tipoServicio INT NULL,
-                           escala INT NULL
+                           apiKey NVARCHAR(255) NULL
 );
 GO
 
@@ -25,14 +25,14 @@ CREATE TABLE Producto (
 GO
 
 CREATE TABLE ProductoProveedor (
-                                   idProveedor INT NOT NULL,
-                                   codigoProducto INT NOT NULL,
-                                   fechaActualizacion DATETIME NOT NULL DEFAULT GETDATE(),
-                                   estado INT NOT NULL DEFAULT 1,
-
+                                idProveedor INT NOT NULL,
+                                codigoBarra INT NOT NULL,
+                                fechaActualizacion DATETIME NOT NULL DEFAULT GETDATE(),
+                                estado INT NOT NULL DEFAULT 1,
+                                codigoBarraProveedor INT NOT NULL
     -- Foreign Keys
                                    CONSTRAINT FK_ProductoProveedor_Producto
-                                       FOREIGN KEY (codigoProducto) REFERENCES Producto(codigoBarra),
+                                       FOREIGN KEY (codigoBarra) REFERENCES Producto(codigoBarra),
 
                                    CONSTRAINT FK_ProductoProveedor_Proveedor
                                        FOREIGN KEY (idProveedor) REFERENCES Proveedor(id),
@@ -41,7 +41,7 @@ CREATE TABLE ProductoProveedor (
                                        FOREIGN KEY (estado) REFERENCES EstadoProducto(id),
 
                                    CONSTRAINT PK_ProductoProveedor
-                                       PRIMARY KEY (codigoProducto, idProveedor)
+                                       PRIMARY KEY (codigoBarra, idProveedor)
 );
 GO
 
@@ -52,16 +52,14 @@ CREATE TABLE EstadoPedido (
 );
 GO
 
-
 CREATE TABLE Pedido (
                         id INT PRIMARY KEY IDENTITY(1,1),
                         estado INT NOT NULL,
                         proveedor INT NOT NULL,
-                        puntuacion TINYINT NULL,
-                        fechaCreada DATETIME NOT NULL DEFAULT GETDATE(),
+                        fechaEstimada DATETIME NOT NULL DEFAULT GETDATE(),
                         fechaEntrega DATETIME NULL,
                         fechaRegistro DATETIME NOT NULL DEFAULT GETDATE(),
-                        evaluacion SMALLINT NULL,
+                        evaluacionEscala SMALLINT NULL,
 
     -- Foreign Keys
                         CONSTRAINT FK_Pedido_EstadoPedido
@@ -72,7 +70,9 @@ CREATE TABLE Pedido (
 );
 GO
 
-
+-- =============================================
+-- Create PedidoProducto Table if doesn't exist
+-- =============================================
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'PedidoProducto')
 BEGIN
 CREATE TABLE PedidoProducto (
@@ -90,9 +90,7 @@ ELSE
 BEGIN
     PRINT 'PedidoProducto table already exists.';
 END
-
 GO
-
 
 -- =============================================
 -- Create HistorialPrecio Table

@@ -1,14 +1,12 @@
 package ubp.edu.com.ar.finalproyect.service;
 
 import org.springframework.stereotype.Service;
-import ubp.edu.com.ar.finalproyect.domain.HistorialPrecio;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.exception.ProductoNotFoundException;
 import ubp.edu.com.ar.finalproyect.port.HistorialPrecioRepository;
 import ubp.edu.com.ar.finalproyect.port.ProductoRepository;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class ProductoService {
@@ -27,10 +25,10 @@ public class ProductoService {
         if (producto == null) {
             throw new IllegalArgumentException("Producto cannot be null");
         }
-        if (producto.getBarCode() == null) {
+        if (producto.getCodigoBarra() == null) {
             throw new IllegalArgumentException("Producto barCode cannot be null");
         }
-        if (producto.getName() == null || producto.getName().trim().isEmpty()) {
+        if (producto.getNombre() == null || producto.getNombre().trim().isEmpty()) {
             throw new IllegalArgumentException("Producto name cannot be null or empty");
         }
 

@@ -25,12 +25,12 @@ public class ProductoRepositoryImpl implements ProductoRepository {
     @Transactional
     public Producto save(Producto producto) {
         SqlParameterSource in = new MapSqlParameterSource()
-                .addValue("codigoBarra", producto.getBarCode())
-                .addValue("nombre", producto.getName())
+                .addValue("codigoBarra", producto.getCodigoBarra())
+                .addValue("nombre", producto.getNombre())
                 .addValue("imagen", producto.getImage())
                 .addValue("stockMinimo", producto.getMinStock())
                 .addValue("stockMaximo", producto.getMaxStock())
-                .addValue("stockActual", producto.getCurrentStock());
+                .addValue("stockActual", producto.getActualStock());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_save_product")
@@ -151,10 +151,10 @@ public class ProductoRepositoryImpl implements ProductoRepository {
                 entity.getNombre(),
                 entity.getImagen(),
                 entity.getStockMinimo(),
-                entity.getStockMaximo()
-                
+                entity.getStockMaximo(),
+
         );
-        producto.setCurrentStock(entity.getStockActual());
+        producto.setActualStock(entity.getStockActual());
         if (entity.getFechaActualizacion() != null) {
             producto.setUpdateDate(entity.getFechaActualizacion());
         }
@@ -173,12 +173,12 @@ public class ProductoRepositoryImpl implements ProductoRepository {
     // Helper: Domain → Entity
     private ProductoEntity toEntity(Producto producto) {
         return new ProductoEntity(
-                producto.getBarCode(),
-                producto.getName(),
+                producto.getCodigoBarra(),
+                producto.getNombre(),
                 producto.getImage(),
                 producto.getMinStock(),
                 producto.getMaxStock(),
-                producto.getCurrentStock()
+                producto.getActualStock()
         );
     }
 }

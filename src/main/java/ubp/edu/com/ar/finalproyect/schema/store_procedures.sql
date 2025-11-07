@@ -1,22 +1,3 @@
--- DELETE ALL PROCEDURES
-
--- DROP PROCEDURE IF EXISTS sp_find_all_products;
--- DROP PROCEDURE IF EXISTS sp_find_all_providers;
--- DROP PROCEDURE IF EXISTS sp_find_product_by_barcode;
--- DROP PROCEDURE IF EXISTS sp_delete_product;
--- DROP PROCEDURE IF EXISTS sp_delete_provider;
--- DROP PROCEDURE IF EXISTS sp_find_provider_by_id;
--- DROP PROCEDURE IF EXISTS sp_get_products_by_provider;
--- DROP PROCEDURE IF EXISTS sp_save_product;
--- DROP PROCEDURE IF EXISTS sp_save_provider;
--- DROP PROCEDURE IF EXISTS sp_assign_product_to_provider;
--- DROP PROCEDURE IF EXISTS sp_create_pedido;
--- DROP PROCEDURE IF EXISTS sp_find_pedido_by_id;
--- DROP PROCEDURE IF EXISTS sp_find_all_pedidos;
--- DROP PROCEDURE IF EXISTS sp_update_pedido;
--- DROP PROCEDURE IF EXISTS sp_delete_pedido;
--- DROP PROCEDURE IF EXISTS sp_find_pedidos_by_proveedor;
--- GO
 
 -- =============================================
 -- Get price history by product
@@ -154,7 +135,7 @@ END
 -- =============================================
 -- Delete Proveedor by ID
 -- =============================================
-CREATE PROCEDURE sp_delete_provider
+CREATE OR ALTER PROCEDURE sp_delete_provider
     @id INT
 AS
 BEGIN
@@ -168,13 +149,13 @@ go
 -- =============================================
 -- Find Proveedor by ID
 -- =============================================
-CREATE PROCEDURE sp_find_provider_by_id
+CREATE OR ALTER PROCEDURE sp_find_provider_by_id
     @id INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-SELECT id, nombre, servicio, tipoServicio, escala
+SELECT id, nombre, apiEndpoint, tipoServicio, apiKey
 FROM Proveedor
 WHERE id = @id;
 END
