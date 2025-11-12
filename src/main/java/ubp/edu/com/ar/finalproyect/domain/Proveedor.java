@@ -6,6 +6,7 @@ public class Proveedor {
     private String name;
     private String apiEndpoint;
     private Integer tipoServicio;
+    private String tipoServicioNombre;
     private String apiKey;
 
     public String getName() {
@@ -48,14 +49,23 @@ public class Proveedor {
         this.id = id;
     }
 
+    public String getTipoServicioNombre() {
+        return tipoServicioNombre;
+    }
+
+    public void setTipoServicioNombre(String tipoServicioNombre) {
+        this.tipoServicioNombre = tipoServicioNombre;
+    }
+
     public Proveedor() {
     }
 
-    public Proveedor(Integer id, String name, String apiEndpoint, Integer tipoServicio, String apiKey) {
+    public Proveedor(Integer id, String name, String apiEndpoint, Integer tipoServicio, String tipoServicioNombre, String apiKey) {
         this.id = id;
         this.name = name;
         this.apiEndpoint = apiEndpoint;
         this.tipoServicio = tipoServicio;
+        this.tipoServicioNombre = tipoServicioNombre;
         this.apiKey = apiKey;
     }
 }

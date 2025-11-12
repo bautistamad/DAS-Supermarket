@@ -7,16 +7,18 @@ public class ProveedorEntity {
     private String nombre;
     private String apiEndpoint;
     private Integer tipoServicio;
+    private String tipoServicioNombre;
     private String apiKey;
 
     public ProveedorEntity() {
     }
 
-    public ProveedorEntity(Integer id, String nombre, String apiEndpoint, Integer tipoServicio, String apiKey) {
+    public ProveedorEntity(Integer id, String nombre, String apiEndpoint, Integer tipoServicio, String tipoServicioNombre, String apiKey) {
         this.id = id;
         this.nombre = nombre;
         this.apiEndpoint = apiEndpoint;
         this.tipoServicio = tipoServicio;
+        this.tipoServicioNombre = tipoServicioNombre;
         this.apiKey = apiKey;
     }
 
@@ -58,6 +60,14 @@ public class ProveedorEntity {
 
     public void setApiKey(String apiKey) {
         this.apiKey = apiKey;
+    }
+
+    public String getTipoServicioNombre() {
+        return tipoServicioNombre;
+    }
+
+    public void setTipoServicioNombre(String tipoServicioNombre) {
+        this.tipoServicioNombre = tipoServicioNombre;
     }
 }
 

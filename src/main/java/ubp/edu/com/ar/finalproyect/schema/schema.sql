@@ -1,7 +1,13 @@
 CREATE TABLE EstadoProducto (
                                 id INT PRIMARY KEY IDENTITY(1,1),
                                 nombre NVARCHAR(255) NOT NULL,
-                                descripcion TEXT NULL
+                                descripcion NVARCHAR(255) NULL
+);
+GO
+
+CREATE TABLE TipoServicio (
+                              id INT PRIMARY KEY IDENTITY(1,1),
+                              nombre NVARCHAR(255) NOT NULL
 );
 GO
 
@@ -10,7 +16,10 @@ CREATE TABLE Proveedor (
                            nombre NVARCHAR(255) NOT NULL,
                            apiEndpoint NVARCHAR(255) NULL,
                            tipoServicio INT NULL,
-                           apiKey NVARCHAR(255) NULL
+                           apiKey NVARCHAR(255) NULL,
+
+                           CONSTRAINT FK_Proveedor_TipoServicio
+                               FOREIGN KEY (tipoServicio) REFERENCES TipoServicio(id)
 );
 GO
 

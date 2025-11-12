@@ -115,6 +115,7 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
                 entity.getNombre(),
                 entity.getApiEndpoint(),
                 entity.getTipoServicio(),
+                entity.getTipoServicioNombre(),
                 entity.getApiKey()
         );
     }
@@ -126,6 +127,7 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
                 proveedor.getName(),
                 proveedor.getApiEndpoint(),
                 proveedor.getTipoServicio(),
+                proveedor.getTipoServicioNombre(),
                 proveedor.getApiKey()
         );
     }

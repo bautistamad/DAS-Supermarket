@@ -1,9 +1,8 @@
-
 -- =============================================
 -- Get price history by product
 -- =============================================
-CREATE PROCEDURE sp_get_precio_history_by_product
-    @codigoBarra INT
+CREATE OR ALTER PROCEDURE sp_get_precio_history_by_product
+@codigoBarra INT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -35,7 +34,7 @@ GO
 -- =============================================
 -- Get current price by product and provider
 -- =============================================
-CREATE PROCEDURE sp_get_current_precio_by_product_provider
+CREATE OR ALTER PROCEDURE sp_get_current_precio_by_product_provider
     @codigoBarra INT,
     @idProveedor INT
 AS
@@ -78,8 +77,8 @@ GO
 -- =============================================
 -- Find All Products
 -- =============================================
-CREATE PROCEDURE sp_find_all_products
-    AS
+CREATE OR ALTER PROCEDURE sp_find_all_products
+AS
 BEGIN
     SET NOCOUNT ON;
 
@@ -92,14 +91,15 @@ go
 -- =============================================
 -- Find All Providers
 -- =============================================
-CREATE PROCEDURE sp_find_all_providers
-    AS
+CREATE OR ALTER PROCEDURE sp_find_all_providers
+AS
 BEGIN
     SET NOCOUNT ON;
 
-SELECT id, nombre, servicio, tipoServicio, escala
-FROM Proveedor
-ORDER BY nombre;
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.apiKey
+    FROM Proveedor p
+    LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
+    ORDER BY p.nombre;
 END
 go
 
@@ -107,8 +107,8 @@ go
 -- Find Products by Barcode
 -- =============================================
 
-CREATE PROCEDURE sp_find_product_by_barcode
-    @codigoBarra INT
+CREATE OR ALTER PROCEDURE sp_find_product_by_barcode
+@codigoBarra INT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -122,8 +122,8 @@ go
 -- =============================================
 -- Delete Producto by Barcode
 -- =============================================
-CREATE PROCEDURE sp_delete_product
-    @codigoBarra INT
+CREATE OR ALTER PROCEDURE sp_delete_product
+@codigoBarra INT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -131,6 +131,7 @@ BEGIN
 DELETE FROM Producto
 WHERE codigoBarra = @codigoBarra;
 END
+GO
 
 -- =============================================
 -- Delete Proveedor by ID
@@ -165,8 +166,8 @@ go
 -- Get productos by proveedor
 -- =============================================
 
-CREATE   PROCEDURE sp_get_products_by_provider
-    @idProveedor INT
+CREATE OR ALTER PROCEDURE sp_get_products_by_provider
+@idProveedor INT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -178,21 +179,21 @@ BEGIN
             RETURN;
 END
     -- Return all productos for this proveedor with estado information
-SELECT
-    p.codigoBarra,
-    p.nombre,
-    p.imagen,
-    p.stockMinimo,
-    p.stockMaximo,
-    p.stockActual,
-    pp.fechaActualizacion,
-    pp.estado,
-    ep.nombre AS estadoNombre,
-    ep.descripcion AS estadoDescripcion
-FROM ProductoProveedor pp
-         INNER JOIN Producto p ON pp.codigoProducto = p.codigoBarra
-         LEFT JOIN EstadoProducto ep ON pp.estado = ep.id
-WHERE pp.idProveedor = @idProveedor
+    SELECT
+        p.codigoBarra,
+        p.nombre,
+        p.imagen,
+        p.stockMinimo,
+        p.stockMaximo,
+        p.stockActual,
+        pp.fechaActualizacion,
+        pp.estado,
+        ep.nombre AS estadoNombre,
+        ep.descripcion AS estadoDescripcion
+    FROM ProductoProveedor pp
+             INNER JOIN Producto p ON pp.codigoBarra = p.codigoBarra -- Corregido: Asumí que la columna era codigoBarra, no codigoProducto
+             LEFT JOIN EstadoProducto ep ON pp.estado = ep.id
+    WHERE pp.idProveedor = @idProveedor
 --       AND pp.estado = 1 Only active productos (estado = 1)
 ORDER BY p.nombre;
 END
@@ -202,7 +203,7 @@ go
 -- =============================================
 -- Save Producto (INSERT or UPDATE)
 -- =============================================
-CREATE PROCEDURE sp_save_product
+CREATE OR ALTER PROCEDURE sp_save_product
     @codigoBarra INT,
     @nombre NVARCHAR(255),
     @imagen NVARCHAR(500),
@@ -243,12 +244,12 @@ go
 -- =============================================
 -- Save Proveedor (INSERT or UPDATE)
 -- =============================================
-CREATE PROCEDURE sp_save_provider
+CREATE OR ALTER PROCEDURE sp_save_provider
     @id INT OUTPUT,
     @nombre NVARCHAR(255),
-    @servicio NVARCHAR(255),
-    @tipoServicio NVARCHAR(100),
-    @escala NVARCHAR(100)
+    @apiEndpoint NVARCHAR(255),
+    @tipoServicio INT,
+    @apiKey NVARCHAR(255)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -257,37 +258,39 @@ BEGIN
     IF @id IS NOT NULL AND @id > 0 AND EXISTS (SELECT 1 FROM Proveedor WHERE id = @id)
 BEGIN
             -- UPDATE
-UPDATE Proveedor
-SET nombre = @nombre,
-    servicio = @servicio,
-    tipoServicio = @tipoServicio,
-    escala = @escala
-WHERE id = @id;
-END
-ELSE
-BEGIN
+            UPDATE Proveedor
+            SET nombre = @nombre,
+                apiEndpoint = @apiEndpoint,
+                tipoServicio = @tipoServicio,
+                apiKey = @apiKey
+            WHERE id = @id;
+        END
+    ELSE
+        BEGIN
             -- INSERT
-INSERT INTO Proveedor (nombre, servicio, tipoServicio, escala)
-VALUES (@nombre, @servicio, @tipoServicio, @escala);
+            INSERT INTO Proveedor (nombre, apiEndpoint, tipoServicio, apiKey)
+            VALUES (@nombre, @apiEndpoint, @tipoServicio, @apiKey);
 
 SET @id = SCOPE_IDENTITY();
 END
 
     -- Return the saved proveedor
-SELECT id, nombre, servicio, tipoServicio, escala
-FROM Proveedor
-WHERE id = @id;
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.apiKey
+    FROM Proveedor p
+    LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
+    WHERE p.id = @id;
 END
 go
 
 -- =============================================
 -- Assign producto to proveedor
 -- =============================================
-CREATE PROCEDURE sp_assign_product_to_provider
+CREATE OR ALTER PROCEDURE sp_assign_product_to_provider
     @idProveedor INT,
-        @codigoProducto INT,
-        @estado INT = 1
-    AS
+    @codigoProducto INT,
+    @codigoBarraProveedor INT,
+    @estado INT = 1
+AS
 BEGIN
         SET NOCOUNT ON;
 
@@ -305,51 +308,51 @@ BEGIN
                 RETURN;
 END
 
-        -- Check if relationship already exists
-        IF EXISTS (SELECT 1 FROM ProductoProveedor
-                   WHERE idProveedor = @idProveedor
-                     AND codigoProducto = @codigoProducto)
-BEGIN
-                -- UPDATE existing relationship
-UPDATE ProductoProveedor
-SET fechaActualizacion = GETDATE(),
-    estado = @estado
-WHERE idProveedor = @idProveedor
-  AND codigoProducto = @codigoProducto;
+    -- Check if relationship already exists
+    IF EXISTS (SELECT 1 FROM ProductoProveedor
+               WHERE idProveedor = @idProveedor
+                 AND codigoBarra = @codigoProducto)
+        BEGIN
+            -- UPDATE existing relationship
+            UPDATE ProductoProveedor
+            SET fechaActualizacion = GETDATE(),
+                estado = @estado,
+                codigoBarraProveedor = @codigoBarraProveedor
+            WHERE idProveedor = @idProveedor
+              AND codigoBarra = @codigoProducto;
 
-PRINT 'Relationship updated.';
-END
-ELSE
-BEGIN
-                -- INSERT new relationship
-INSERT INTO ProductoProveedor (idProveedor, codigoProducto, fechaActualizacion, estado)
-VALUES (@idProveedor, @codigoProducto, GETDATE(), @estado);
+            PRINT 'Relationship updated.';
+        END
+    ELSE
+        BEGIN
+            -- INSERT new relationship
+            INSERT INTO ProductoProveedor (idProveedor, codigoBarra, codigoBarraProveedor, fechaActualizacion, estado)
+            VALUES (@idProveedor, @codigoProducto, @codigoBarraProveedor, GETDATE(), @estado);
 
 PRINT 'Relationship created.';
 END
 
-        -- Return the relationship with details
-SELECT pp.idProveedor, pp.codigoProducto, pp.fechaActualizacion, pp.estado,
-       p.nombre AS productoNombre,
-       pr.nombre AS proveedorNombre
-FROM ProductoProveedor pp
-         INNER JOIN Producto p ON pp.codigoProducto = p.codigoBarra
-         INNER JOIN Proveedor pr ON pp.idProveedor = pr.id
-WHERE pp.idProveedor = @idProveedor
-  AND pp.codigoProducto = @codigoProducto;
+    -- Return the relationship with details
+    SELECT pp.idProveedor, pp.codigoBarra, pp.codigoBarraProveedor, pp.fechaActualizacion, pp.estado,
+           p.nombre AS productoNombre,
+           pr.nombre AS proveedorNombre
+    FROM ProductoProveedor pp
+             INNER JOIN Producto p ON pp.codigoBarra = p.codigoBarra
+             INNER JOIN Proveedor pr ON pp.idProveedor = pr.id
+    WHERE pp.idProveedor = @idProveedor
+      AND pp.codigoBarra = @codigoProducto;
 END
 go
 
 -- =============================================
 -- Create pedido
 -- =============================================
-CREATE PROCEDURE sp_create_pedido
+CREATE OR ALTER PROCEDURE sp_create_pedido
     @estado SMALLINT,
-      @proveedor SMALLINT,
-      @puntuacion TINYINT = NULL,
-      @fechaEntrega DATETIME = NULL,
-      @evaluacion SMALLINT = NULL
-  AS
+    @proveedor SMALLINT,
+    @fechaEntrega DATETIME = NULL,
+    @evaluacionEscala SMALLINT = NULL
+AS
 BEGIN
       SET NOCOUNT ON;
 
@@ -367,30 +370,29 @@ BEGIN
           RETURN;
 END
 
-      DECLARE @newId SMALLINT;
+    DECLARE @newId INT; -- Cambiado de SMALLINT a INT para coincidir con Pedido.id (IDENTITY)
 
-INSERT INTO Pedido (estado, proveedor, puntuacion, fechaEntrega, evaluacion)
-VALUES (@estado, @proveedor, @puntuacion, @fechaEntrega, @evaluacion);
+    INSERT INTO Pedido (estado, proveedor, fechaEntrega, evaluacionEscala)
+    VALUES (@estado, @proveedor, @fechaEntrega, @evaluacionEscala);
 
 SET @newId = SCOPE_IDENTITY();
 
-      -- Return the created pedido with estado and proveedor info
-SELECT
-    p.id,
-    p.estado,
-    ep.nombre AS estadoNombre,
-    ep.descripcion AS estadoDescripcion,
-    p.proveedor,
-    pr.nombre AS proveedorNombre,
-    p.puntuacion,
-    p.fechaCreada,
-    p.fechaEntrega,
-    p.fechaRegistro,
-    p.evaluacion
-FROM Pedido p
-         INNER JOIN EstadoPedido ep ON p.estado = ep.id
-         INNER JOIN Proveedor pr ON p.proveedor = pr.id
-WHERE p.id = @newId;
+    -- Return the created pedido with estado and proveedor info
+    SELECT
+        p.id,
+        p.estado,
+        ep.nombre AS estadoNombre,
+        ep.descripcion AS estadoDescripcion,
+        p.proveedor,
+        pr.nombre AS proveedorNombre,
+        p.fechaEstimada,
+        p.fechaEntrega,
+        p.fechaRegistro,
+        p.evaluacionEscala
+    FROM Pedido p
+             INNER JOIN EstadoPedido ep ON p.estado = ep.id
+             INNER JOIN Proveedor pr ON p.proveedor = pr.id
+    WHERE p.id = @newId;
 END
 GO
 
@@ -398,36 +400,34 @@ GO
 -- =============================================
 -- Return pedido by id WITH products
 -- =============================================
-CREATE PROCEDURE sp_find_pedido_by_id
-    @id SMALLINT
-  AS
+CREATE OR ALTER PROCEDURE sp_find_pedido_by_id
+@id INT -- Cambiado de SMALLINT a INT
+AS
 BEGIN
       SET NOCOUNT ON;
 
-SELECT
-    p.id,
-    p.estado,
-    ep.nombre AS estadoNombre,
-    ep.descripcion AS estadoDescripcion,
-    p.proveedor,
-    pr.nombre AS proveedorNombre,
-    p.puntuacion,
-    p.fechaCreada,
-    p.fechaEntrega,
-    p.fechaRegistro,
-    p.evaluacion,
-    -- Product information from PedidoProducto
-    pp.codigoBarra,
-    pp.cantidad,
-    pp.precio,
-    prod.nombre AS productoNombre,
-    prod.imagen AS productoImagen
-FROM Pedido p
-         INNER JOIN EstadoPedido ep ON p.estado = ep.id
-         INNER JOIN Proveedor pr ON p.proveedor = pr.id
-         LEFT JOIN PedidoProducto pp ON p.id = pp.idPedido
-         LEFT JOIN Producto prod ON pp.codigoBarra = prod.codigoBarra
-WHERE p.id = @id;
+    SELECT
+        p.id,
+        p.estado,
+        ep.nombre AS estadoNombre,
+        ep.descripcion AS estadoDescripcion,
+        p.proveedor,
+        pr.nombre AS proveedorNombre,
+        p.fechaEstimada,
+        p.fechaEntrega,
+        p.fechaRegistro,
+        p.evaluacionEscala,
+        -- Product information from PedidoProducto
+        pp.codigoBarra,
+        pp.cantidad,
+        prod.nombre AS productoNombre,
+        prod.imagen AS productoImagen
+    FROM Pedido p
+             INNER JOIN EstadoPedido ep ON p.estado = ep.id
+             INNER JOIN Proveedor pr ON p.proveedor = pr.id
+             LEFT JOIN PedidoProducto pp ON p.id = pp.idPedido
+             LEFT JOIN Producto prod ON pp.codigoBarra = prod.codigoBarra
+    WHERE p.id = @id;
 END
 GO
 
@@ -435,35 +435,33 @@ GO
 -- =============================================
 -- Find all pedidos WITH products
 -- =============================================
-CREATE PROCEDURE sp_find_all_pedidos
-    AS
+CREATE OR ALTER PROCEDURE sp_find_all_pedidos
+AS
 BEGIN
       SET NOCOUNT ON;
 
-SELECT
-    p.id,
-    p.estado,
-    ep.nombre AS estadoNombre,
-    ep.descripcion AS estadoDescripcion,
-    p.proveedor,
-    pr.nombre AS proveedorNombre,
-    p.puntuacion,
-    p.fechaCreada,
-    p.fechaEntrega,
-    p.fechaRegistro,
-    p.evaluacion,
-    -- Product information from PedidoProducto
-    pp.codigoBarra,
-    pp.cantidad,
-    pp.precio,
-    prod.nombre AS productoNombre,
-    prod.imagen AS productoImagen
-FROM Pedido p
-         INNER JOIN EstadoPedido ep ON p.estado = ep.id
-         INNER JOIN Proveedor pr ON p.proveedor = pr.id
-         LEFT JOIN PedidoProducto pp ON p.id = pp.idPedido
-         LEFT JOIN Producto prod ON pp.codigoBarra = prod.codigoBarra
-ORDER BY p.fechaCreada DESC, pp.codigoBarra;
+    SELECT
+        p.id,
+        p.estado,
+        ep.nombre AS estadoNombre,
+        ep.descripcion AS estadoDescripcion,
+        p.proveedor,
+        pr.nombre AS proveedorNombre,
+        p.fechaEstimada,
+        p.fechaEntrega,
+        p.fechaRegistro,
+        p.evaluacionEscala,
+        -- Product information from PedidoProducto
+        pp.codigoBarra,
+        pp.cantidad,
+        prod.nombre AS productoNombre,
+        prod.imagen AS productoImagen
+    FROM Pedido p
+             INNER JOIN EstadoPedido ep ON p.estado = ep.id
+             INNER JOIN Proveedor pr ON p.proveedor = pr.id
+             LEFT JOIN PedidoProducto pp ON p.id = pp.idPedido
+             LEFT JOIN Producto prod ON pp.codigoBarra = prod.codigoBarra
+    ORDER BY p.fechaEstimada DESC, pp.codigoBarra;
 END
 GO
 
@@ -471,13 +469,12 @@ GO
 -- =============================================
 -- Update pedido
 -- =============================================
-CREATE PROCEDURE sp_update_pedido
-    @id SMALLINT,
-      @estado SMALLINT,
-      @puntuacion TINYINT = NULL,
-      @fechaEntrega DATETIME = NULL,
-      @evaluacion SMALLINT = NULL
-  AS
+CREATE OR ALTER PROCEDURE sp_update_pedido
+    @id INT, -- Cambiado de SMALLINT a INT
+    @estado INT, -- Cambiado de SMALLINT a INT
+    @fechaEntrega DATETIME = NULL,
+    @evaluacionEscala SMALLINT = NULL
+AS
 BEGIN
       SET NOCOUNT ON;
 
@@ -495,30 +492,28 @@ BEGIN
           RETURN;
 END
 
-UPDATE Pedido
-SET estado = @estado,
-    puntuacion = @puntuacion,
-    fechaEntrega = @fechaEntrega,
-    evaluacion = @evaluacion
-WHERE id = @id;
+    UPDATE Pedido
+    SET estado = @estado,
+        fechaEntrega = @fechaEntrega,
+        evaluacionEscala = @evaluacionEscala
+    WHERE id = @id;
 
 -- Return the updated pedido
-SELECT
-    p.id,
-    p.estado,
-    ep.nombre AS estadoNombre,
-    ep.descripcion AS estadoDescripcion,
-    p.proveedor,
-    pr.nombre AS proveedorNombre,
-    p.puntuacion,
-    p.fechaCreada,
-    p.fechaEntrega,
-    p.fechaRegistro,
-    p.evaluacion
-FROM Pedido p
-         INNER JOIN EstadoPedido ep ON p.estado = ep.id
-         INNER JOIN Proveedor pr ON p.proveedor = pr.id
-WHERE p.id = @id;
+    SELECT
+        p.id,
+        p.estado,
+        ep.nombre AS estadoNombre,
+        ep.descripcion AS estadoDescripcion,
+        p.proveedor,
+        pr.nombre AS proveedorNombre,
+        p.fechaEstimada,
+        p.fechaEntrega,
+        p.fechaRegistro,
+        p.evaluacionEscala
+    FROM Pedido p
+             INNER JOIN EstadoPedido ep ON p.estado = ep.id
+             INNER JOIN Proveedor pr ON p.proveedor = pr.id
+    WHERE p.id = @id;
 END
 GO
 
@@ -526,9 +521,9 @@ GO
 -- =============================================
 -- Delete pedido
 -- =============================================
-CREATE PROCEDURE sp_delete_pedido
-    @id SMALLINT
-  AS
+CREATE OR ALTER PROCEDURE sp_delete_pedido
+@id INT -- Cambiado de SMALLINT a INT
+AS
 BEGIN
       SET NOCOUNT ON;
 
@@ -548,9 +543,9 @@ GO
 -- =============================================
 -- Find pedidos by proveedor
 -- =============================================
-CREATE PROCEDURE sp_find_pedidos_by_proveedor
-    @proveedorId SMALLINT
-  AS
+CREATE OR ALTER PROCEDURE sp_find_pedidos_by_proveedor
+@proveedorId INT -- Cambiado de SMALLINT a INT
+AS
 BEGIN
       SET NOCOUNT ON;
 
@@ -561,23 +556,22 @@ BEGIN
           RETURN;
 END
 
-SELECT
-    p.id,
-    p.estado,
-    ep.nombre AS estadoNombre,
-    ep.descripcion AS estadoDescripcion,
-    p.proveedor,
-    pr.nombre AS proveedorNombre,
-    p.puntuacion,
-    p.fechaCreada,
-    p.fechaEntrega,
-    p.fechaRegistro,
-    p.evaluacion
-FROM Pedido p
-         INNER JOIN EstadoPedido ep ON p.estado = ep.id
-         INNER JOIN Proveedor pr ON p.proveedor = pr.id
-WHERE p.proveedor = @proveedorId
-ORDER BY p.fechaCreada DESC;
+    SELECT
+        p.id,
+        p.estado,
+        ep.nombre AS estadoNombre,
+        ep.descripcion AS estadoDescripcion,
+        p.proveedor,
+        pr.nombre AS proveedorNombre,
+        p.fechaEstimada,
+        p.fechaEntrega,
+        p.fechaRegistro,
+        p.evaluacionEscala
+    FROM Pedido p
+             INNER JOIN EstadoPedido ep ON p.estado = ep.id
+             INNER JOIN Proveedor pr ON p.proveedor = pr.id
+    WHERE p.proveedor = @proveedorId
+    ORDER BY p.fechaEstimada DESC;
 END
 GO
 
@@ -585,8 +579,8 @@ GO
 -- =============================================
 -- Get products by pedido
 -- =============================================
-CREATE PROCEDURE sp_get_products_by_pedido
-    @idPedido SMALLINT
+CREATE OR ALTER PROCEDURE sp_get_products_by_pedido
+@idPedido INT -- Cambiado de SMALLINT a INT
 AS
 BEGIN
     SET NOCOUNT ON;
