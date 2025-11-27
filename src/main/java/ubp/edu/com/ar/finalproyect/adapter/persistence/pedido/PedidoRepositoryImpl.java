@@ -201,6 +201,12 @@ public class PedidoRepositoryImpl implements PedidoRepository {
             pedido.setProveedorNombre(entity.getProveedorNombre());
         }
 
+        // Load productos for this pedido
+        if (entity.getId() != null) {
+            List<PedidoProducto> productos = findProductsByPedidoId(entity.getId());
+            pedido.setProductos(productos);
+        }
+
         return pedido;
     }
 
