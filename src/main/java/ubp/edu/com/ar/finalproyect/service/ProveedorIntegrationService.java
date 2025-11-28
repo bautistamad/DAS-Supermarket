@@ -3,15 +3,14 @@ package ubp.edu.com.ar.finalproyect.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import ubp.edu.com.ar.finalproyect.domain.HistorialPrecio;
-import ubp.edu.com.ar.finalproyect.domain.Proveedor;
+import ubp.edu.com.ar.finalproyect.domain.Pedido;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
+import ubp.edu.com.ar.finalproyect.domain.Proveedor;
 import ubp.edu.com.ar.finalproyect.exception.ProveedorNotFoundException;
 import ubp.edu.com.ar.finalproyect.port.ProveedorIntegration;
 import ubp.edu.com.ar.finalproyect.port.ProveedorRepository;
 
 import java.util.List;
-
 
 @Service
 public class ProveedorIntegrationService {
@@ -27,70 +26,47 @@ public class ProveedorIntegrationService {
         this.factory = factory;
     }
 
+    /**
+     * Check health for an existing provider (by ID)
+     * Fetches provider from database and validates connection
+     */
     public boolean checkProveedorHealth(Integer proveedorId) {
         logger.info("Checking health for provider ID: {}", proveedorId);
 
-        // Fetch provider details
-        Proveedor proveedor = proveedorRepository.findById(proveedorId)
-            .orElseThrow(() -> new ProveedorNotFoundException(
-                "Provider with ID " + proveedorId + " not found"
-            ));
+        Proveedor proveedor = getProveedor(proveedorId);
 
-        // Select appropriate adapter based on service type
-        ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
-        logger.debug("Selected adapter for service type: {}", proveedor.getTipoServicio());
+        return checkProveedorHealthDirect(
+            proveedor.getApiEndpoint(),
+            proveedor.getApiKey(),
+            proveedor.getTipoServicio()
+        );
+    }
 
-        // Check health
+    /**
+     * Check health for a provider using direct parameters (without DB lookup)
+     * Useful for validating provider before creation
+     */
+    public boolean checkProveedorHealthDirect(String apiEndpoint, String apiKey, Integer tipoServicio) {
+        logger.info("Checking health for provider endpoint: {}", apiEndpoint);
+
         try {
-            boolean isHealthy = adapter.checkHealth(
-                proveedor.getApiEndpoint(),
-                proveedor.getApiKey()
-            );
+            ProveedorIntegration adapter = factory.getAdapter(tipoServicio);
+            boolean isHealthy = adapter.checkHealth(apiEndpoint, apiKey);
 
-            if (isHealthy) {
-                logger.info("Provider ID {} is healthy", proveedorId);
-            } else {
-                logger.warn("Provider ID {} health check failed", proveedorId);
-            }
-
+            logger.info("Provider health check for endpoint {}: {}", apiEndpoint, isHealthy ? "OK" : "KO");
             return isHealthy;
 
         } catch (Exception e) {
-            logger.error("Failed to check health for provider ID: {}", proveedorId, e);
+            logger.error("Failed to check health for endpoint: {}", apiEndpoint, e);
             return false;
         }
     }
 
-    public List<Producto> syncProductosFromProveedor(Integer proveedorId) {
-        logger.info("Starting product sync for provider ID: {}", proveedorId);
 
-        // 1. Fetch provider details
-        Proveedor proveedor = proveedorRepository.findById(proveedorId)
+    private Proveedor getProveedor(Integer proveedorId) {
+        return proveedorRepository.findById(proveedorId)
             .orElseThrow(() -> new ProveedorNotFoundException(
                 "Provider with ID " + proveedorId + " not found"
             ));
-
-        // 3. Select appropriate adapter based on service type
-        ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
-        logger.debug("Selected adapter for service type: {}", proveedor.getTipoServicio());
-
-        // 4. Fetch products from external API
-        try {
-            List<Producto> productos = adapter.getProductos(
-                proveedor.getApiEndpoint(),
-                proveedor.getApiKey()
-            );
-
-            logger.info("Successfully fetched {} products from provider ID: {}",
-                productos.size(), proveedorId);
-
-            return productos;
-
-        } catch (Exception e) {
-            logger.error("Failed to sync products from provider ID: {}", proveedorId, e);
-            throw new RuntimeException(
-                "Error syncing products from provider " + proveedor.getName(), e
-            );
-        }
     }
 }

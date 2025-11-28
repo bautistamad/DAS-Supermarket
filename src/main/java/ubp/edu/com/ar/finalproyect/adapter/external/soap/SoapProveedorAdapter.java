@@ -3,13 +3,12 @@ package ubp.edu.com.ar.finalproyect.adapter.external.soap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import ubp.edu.com.ar.finalproyect.domain.HistorialPrecio;
+import ubp.edu.com.ar.finalproyect.domain.Pedido;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.port.ProveedorIntegration;
 
 import java.util.ArrayList;
 import java.util.List;
-
 
 @Component("soapProveedorAdapter")
 public class SoapProveedorAdapter implements ProveedorIntegration {
@@ -18,14 +17,9 @@ public class SoapProveedorAdapter implements ProveedorIntegration {
 
     @Override
     public boolean checkHealth(String apiEndpoint, String apiKey) {
+        logger.warn("SOAP adapter stub called for checkHealth. WSDL: {}", apiEndpoint);
+        logger.info("Returning false - SOAP adapter not yet implemented");
         return false;
     }
 
-    @Override
-    public List<Producto> getProductos(String apiEndpoint, String apiKey) {
-        logger.warn("SOAP adapter stub called for fetchProductos. WSDL: {}", apiEndpoint);
-        logger.info("Returning empty list - waiting for provider WSDL specification");
-
-        return new ArrayList<>();
-    }
 }
