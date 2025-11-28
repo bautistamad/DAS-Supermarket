@@ -68,4 +68,11 @@ public class PedidoController {
         List<PedidoProducto> productos = pedidoService.getProductosByPedido(id);
         return ResponseEntity.ok(productos);
     }
+
+    // POST /api/pedidos/{id}/cancelar - Cancel an order with the external provider
+    @PostMapping("/{id}/cancelar")
+    public ResponseEntity<Pedido> cancelarPedido(@PathVariable Integer id) {
+        Pedido pedidoCancelado = pedidoService.cancelarPedido(id);
+        return ResponseEntity.ok(pedidoCancelado);
+    }
 }

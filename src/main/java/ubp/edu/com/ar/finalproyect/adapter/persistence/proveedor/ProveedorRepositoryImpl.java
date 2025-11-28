@@ -31,6 +31,7 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
                 .addValue("nombre", proveedor.getName())
                 .addValue("apiEndpoint", proveedor.getApiEndpoint())
                 .addValue("tipoServicio", proveedor.getTipoServicio())
+                .addValue("clientId", proveedor.getClientId())
                 .addValue("apiKey", proveedor.getApiKey());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
@@ -116,6 +117,7 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
                 entity.getApiEndpoint(),
                 entity.getTipoServicio(),
                 entity.getTipoServicioNombre(),
+                entity.getClientId(),
                 entity.getApiKey()
         );
     }
@@ -128,6 +130,7 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
                 proveedor.getApiEndpoint(),
                 proveedor.getTipoServicio(),
                 proveedor.getTipoServicioNombre(),
+                proveedor.getClientId(),
                 proveedor.getApiKey()
         );
     }

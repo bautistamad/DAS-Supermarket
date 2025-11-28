@@ -16,6 +16,7 @@ CREATE TABLE Proveedor (
                            nombre NVARCHAR(255) NOT NULL,
                            apiEndpoint NVARCHAR(255) NULL,
                            tipoServicio INT NULL,
+                           clientId NVARCHAR(255) NULL,
                            apiKey NVARCHAR(255) NULL,
 
                            CONSTRAINT FK_Proveedor_TipoServicio

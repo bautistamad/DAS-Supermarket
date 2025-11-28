@@ -16,10 +16,18 @@ public class SoapProveedorAdapter implements ProveedorIntegration {
     private static final Logger logger = LoggerFactory.getLogger(SoapProveedorAdapter.class);
 
     @Override
-    public boolean checkHealth(String apiEndpoint, String apiKey) {
-        logger.warn("SOAP adapter stub called for checkHealth. WSDL: {}", apiEndpoint);
+    public boolean checkHealth(String apiEndpoint, String clientId, String apiKey) {
+        logger.warn("SOAP adapter stub called for checkHealth. WSDL: {}, clientId: {}", apiEndpoint, clientId);
         logger.info("Returning false - SOAP adapter not yet implemented");
         return false;
+    }
+
+    @Override
+    public Pedido cancelarPedido(String apiEndpoint, String clientId, String apiKey, Integer idPedido) {
+        logger.warn("SOAP adapter stub called for cancelarPedido. WSDL: {}, clientId: {}, pedidoId: {}",
+            apiEndpoint, clientId, idPedido);
+        logger.info("Returning null - SOAP adapter not yet implemented");
+        return null;
     }
 
 }

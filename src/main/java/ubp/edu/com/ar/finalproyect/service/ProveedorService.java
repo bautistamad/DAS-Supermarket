@@ -45,6 +45,7 @@ public class ProveedorService {
 
         boolean isHealthy = integrationService.checkProveedorHealthDirect(
             proveedor.getApiEndpoint(),
+            proveedor.getClientId(),
             proveedor.getApiKey(),
             proveedor.getTipoServicio()
         );

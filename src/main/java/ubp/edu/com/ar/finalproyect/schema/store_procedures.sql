@@ -96,7 +96,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.apiKey
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey
     FROM Proveedor p
     LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
     ORDER BY p.nombre;
@@ -156,9 +156,10 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-SELECT id, nombre, apiEndpoint, tipoServicio, apiKey
-FROM Proveedor
-WHERE id = @id;
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey
+    FROM Proveedor p
+    LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
+    WHERE p.id = @id;
 END
 go
 
@@ -249,6 +250,7 @@ CREATE OR ALTER PROCEDURE sp_save_provider
     @nombre NVARCHAR(255),
     @apiEndpoint NVARCHAR(255),
     @tipoServicio INT,
+    @clientId NVARCHAR(255),
     @apiKey NVARCHAR(255)
 AS
 BEGIN
@@ -262,20 +264,21 @@ BEGIN
             SET nombre = @nombre,
                 apiEndpoint = @apiEndpoint,
                 tipoServicio = @tipoServicio,
+                clientId = @clientId,
                 apiKey = @apiKey
             WHERE id = @id;
         END
     ELSE
         BEGIN
             -- INSERT
-            INSERT INTO Proveedor (nombre, apiEndpoint, tipoServicio, apiKey)
-            VALUES (@nombre, @apiEndpoint, @tipoServicio, @apiKey);
+            INSERT INTO Proveedor (nombre, apiEndpoint, tipoServicio, clientId, apiKey)
+            VALUES (@nombre, @apiEndpoint, @tipoServicio, @clientId, @apiKey);
 
 SET @id = SCOPE_IDENTITY();
 END
 
     -- Return the saved proveedor
-    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.apiKey
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey
     FROM Proveedor p
     LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
     WHERE p.id = @id;

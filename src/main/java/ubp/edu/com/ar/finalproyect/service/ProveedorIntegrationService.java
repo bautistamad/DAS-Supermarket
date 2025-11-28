@@ -37,21 +37,18 @@ public class ProveedorIntegrationService {
 
         return checkProveedorHealthDirect(
             proveedor.getApiEndpoint(),
+            proveedor.getClientId(),
             proveedor.getApiKey(),
             proveedor.getTipoServicio()
         );
     }
 
-    /**
-     * Check health for a provider using direct parameters (without DB lookup)
-     * Useful for validating provider before creation
-     */
-    public boolean checkProveedorHealthDirect(String apiEndpoint, String apiKey, Integer tipoServicio) {
+    public boolean checkProveedorHealthDirect(String apiEndpoint, String clientId, String apiKey, Integer tipoServicio) {
         logger.info("Checking health for provider endpoint: {}", apiEndpoint);
 
         try {
             ProveedorIntegration adapter = factory.getAdapter(tipoServicio);
-            boolean isHealthy = adapter.checkHealth(apiEndpoint, apiKey);
+            boolean isHealthy = adapter.checkHealth(apiEndpoint, clientId, apiKey);
 
             logger.info("Provider health check for endpoint {}: {}", apiEndpoint, isHealthy ? "OK" : "KO");
             return isHealthy;
@@ -62,6 +59,37 @@ public class ProveedorIntegrationService {
         }
     }
 
+
+
+    public Pedido cancelarPedidoWithProveedor(Integer proveedorId, Integer pedidoId) {
+        logger.info("Attempting to cancel order {} with provider ID: {}", pedidoId, proveedorId);
+
+        Proveedor proveedor = getProveedor(proveedorId);
+
+        try {
+            ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
+            Pedido pedidoCancelado = adapter.cancelarPedido(
+                proveedor.getApiEndpoint(),
+                proveedor.getClientId(),
+                proveedor.getApiKey(),
+                pedidoId
+            );
+
+            if (pedidoCancelado != null) {
+                logger.info("Successfully cancelled order {} with provider {}", pedidoId, proveedorId);
+            } else {
+                logger.warn("Failed to cancel order {} with provider {}. Provider did not confirm cancellation.",
+                    pedidoId, proveedorId);
+            }
+
+            return pedidoCancelado;
+
+        } catch (Exception e) {
+            logger.error("Exception occurred while cancelling order {} with provider {}",
+                pedidoId, proveedorId, e);
+            return null;
+        }
+    }
 
     private Proveedor getProveedor(Integer proveedorId) {
         return proveedorRepository.findById(proveedorId)

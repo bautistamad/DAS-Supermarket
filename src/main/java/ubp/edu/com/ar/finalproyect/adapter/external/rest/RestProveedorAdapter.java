@@ -31,26 +31,14 @@ public class RestProveedorAdapter implements ProveedorIntegration {
     }
 
     @Override
-    public boolean checkHealth(String apiEndpoint, String apiKey) {
+    public boolean checkHealth(String apiEndpoint, String clientId, String apiKey) {
         try {
-            logger.info("Checking health for provider: {}", apiEndpoint);
-
-            // Parse apiKey format: "clientId:apikey"
-            String[] apiKeyParts = apiKey.split(":", 2);
-            if (apiKeyParts.length != 2) {
-                logger.error("Invalid API key format. Expected 'clientId:apikey', got: {}", apiKey);
-                return false;
-            }
-
-            String clientId = apiKeyParts[0];
-            String actualApiKey = apiKeyParts[1];
-
-            logger.info("Sending health check with clientId: {}, apikey: {}", clientId, actualApiKey);
+            logger.info("Checking health for provider: {} with clientId: {}", apiEndpoint, clientId);
 
             HealthResponse response = new Httpful(apiEndpoint)
                     .path("/api/health")
                     .addQueryParam("clientId", clientId)
-                    .addQueryParam("apikey", actualApiKey)
+                    .addQueryParam("apikey", apiKey)
                     .get()
                     .execute(HealthResponse.class);
 
@@ -65,6 +53,50 @@ public class RestProveedorAdapter implements ProveedorIntegration {
         } catch (Exception e) {
             logger.error("Health check failed for endpoint: {}", apiEndpoint, e);
             return false;
+        }
+    }
+
+    @Override
+    public Pedido cancelarPedido(String apiEndpoint, String clientId, String apiKey, Integer idPedido) {
+        try {
+            logger.info("Attempting to cancel order {} with provider: {} (clientId: {})", idPedido, apiEndpoint, clientId);
+
+            CancelacionPedido response = new Httpful(apiEndpoint)
+                    .path("/api/cancelarPedido")
+                    .addQueryParam("clientId", clientId)
+                    .addQueryParam("apikey", apiKey)
+                    .addQueryParam("idPedido", idPedido.toString())
+                    .get()
+                    .execute(CancelacionPedido.class);
+
+            if (response == null) {
+                logger.error("Received null response from provider for order cancellation: {}", idPedido);
+                return null;
+            }
+
+            logger.info("Cancellation response for order {}: status={}, description={}",
+                    idPedido, response.getEstado(), response.getDescription());
+
+            // Check if the cancellation was successful
+            if (!response.isCancelled()) {
+                logger.warn("Order {} could not be cancelled. Status: {}, Description: {}",
+                        idPedido, response.getEstado(), response.getDescription());
+                return null;
+            }
+
+            // Create a Pedido object with updated status
+            Pedido pedido = new Pedido();
+            pedido.setId(idPedido);
+            pedido.setEstadoId(6); // EstadoPedido: Cancelado
+            pedido.setEstadoNombre("Cancelado");
+            pedido.setEstadoDescripcion(response.getDescription());
+
+            logger.info("Successfully cancelled order {} with provider", idPedido);
+            return pedido;
+
+        } catch (Exception e) {
+            logger.error("Failed to cancel order {} with provider endpoint: {}", idPedido, apiEndpoint, e);
+            return null;
         }
     }
 }
