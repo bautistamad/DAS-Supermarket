@@ -9,10 +9,10 @@ BEGIN
 
     -- Validate product exists
     IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoBarra)
-    BEGIN
-        RAISERROR('Producto with codigoBarra %d does not exist.', 16, 1, @codigoBarra);
-        RETURN;
-    END
+        BEGIN
+            RAISERROR('Producto with codigoBarra %d does not exist.', 16, 1, @codigoBarra);
+            RETURN;
+        END
 
     SELECT
         hp.codigoBarra,
@@ -23,8 +23,8 @@ BEGIN
         hp.fechaFin,
         p.nombre AS productoNombre
     FROM HistorialPrecio hp
-    INNER JOIN Producto p ON hp.codigoBarra = p.codigoBarra
-    INNER JOIN Proveedor pr ON hp.idProveedor = pr.id
+             INNER JOIN Producto p ON hp.codigoBarra = p.codigoBarra
+             INNER JOIN Proveedor pr ON hp.idProveedor = pr.id
     WHERE hp.codigoBarra = @codigoBarra
     ORDER BY hp.fechaInicio DESC;
 END
@@ -43,17 +43,17 @@ BEGIN
 
     -- Validate product exists
     IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoBarra)
-    BEGIN
-        RAISERROR('Producto with codigoBarra %d does not exist.', 16, 1, @codigoBarra);
-        RETURN;
-    END
+        BEGIN
+            RAISERROR('Producto with codigoBarra %d does not exist.', 16, 1, @codigoBarra);
+            RETURN;
+        END
 
     -- Validate provider exists
     IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
-    BEGIN
-        RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
-        RETURN;
-    END
+        BEGIN
+            RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
+            RETURN;
+        END
 
     SELECT TOP 1
         hp.codigoBarra,
@@ -64,8 +64,8 @@ BEGIN
         hp.fechaFin,
         p.nombre AS productoNombre
     FROM HistorialPrecio hp
-    INNER JOIN Producto p ON hp.codigoBarra = p.codigoBarra
-    INNER JOIN Proveedor pr ON hp.idProveedor = pr.id
+             INNER JOIN Producto p ON hp.codigoBarra = p.codigoBarra
+             INNER JOIN Proveedor pr ON hp.idProveedor = pr.id
     WHERE hp.codigoBarra = @codigoBarra
       AND hp.idProveedor = @idProveedor
       AND hp.fechaFin IS NULL
@@ -82,9 +82,9 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
-FROM Producto
-ORDER BY nombre;
+    SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
+    FROM Producto
+    ORDER BY nombre;
 END
 go
 
@@ -113,9 +113,9 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
-FROM Producto
-WHERE codigoBarra = @codigoBarra;
+    SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
+    FROM Producto
+    WHERE codigoBarra = @codigoBarra;
 END
 go
 
@@ -128,8 +128,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-DELETE FROM Producto
-WHERE codigoBarra = @codigoBarra;
+    DELETE FROM Producto
+    WHERE codigoBarra = @codigoBarra;
 END
 GO
 
@@ -137,13 +137,13 @@ GO
 -- Delete Proveedor by ID
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_delete_provider
-    @id INT
+@id INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-DELETE FROM Proveedor
-WHERE id = @id;
+    DELETE FROM Proveedor
+    WHERE id = @id;
 END
 go
 
@@ -151,7 +151,7 @@ go
 -- Find Proveedor by ID
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_find_provider_by_id
-    @id INT
+@id INT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -175,10 +175,10 @@ BEGIN
 
     -- Validate that proveedor exists
     IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
-BEGIN
+        BEGIN
             RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
             RETURN;
-END
+        END
     -- Return all productos for this proveedor with estado information
     SELECT
         p.codigoBarra,
@@ -196,7 +196,7 @@ END
              LEFT JOIN EstadoProducto ep ON pp.estado = ep.id
     WHERE pp.idProveedor = @idProveedor
 --       AND pp.estado = 1 Only active productos (estado = 1)
-ORDER BY p.nombre;
+    ORDER BY p.nombre;
 END
 go
 
@@ -217,27 +217,27 @@ BEGIN
 
     -- Check if producto exists
     IF EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoBarra)
-BEGIN
+        BEGIN
             -- UPDATE
-UPDATE Producto
-SET nombre = @nombre,
-    imagen = @imagen,
-    stockMinimo = @stockMinimo,
-    stockMaximo = @stockMaximo,
-    stockActual = @stockActual
-WHERE codigoBarra = @codigoBarra;
-END
-ELSE
-BEGIN
+            UPDATE Producto
+            SET nombre = @nombre,
+                imagen = @imagen,
+                stockMinimo = @stockMinimo,
+                stockMaximo = @stockMaximo,
+                stockActual = @stockActual
+            WHERE codigoBarra = @codigoBarra;
+        END
+    ELSE
+        BEGIN
             -- INSERT
-INSERT INTO Producto (codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual)
-VALUES (@codigoBarra, @nombre, @imagen, @stockMinimo, @stockMaximo, @stockActual);
-END
+            INSERT INTO Producto (codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual)
+            VALUES (@codigoBarra, @nombre, @imagen, @stockMinimo, @stockMaximo, @stockActual);
+        END
 
     -- Return the saved producto
-SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
-FROM Producto
-WHERE codigoBarra = @codigoBarra;
+    SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
+    FROM Producto
+    WHERE codigoBarra = @codigoBarra;
 END
 go
 
@@ -258,7 +258,7 @@ BEGIN
 
     -- Check if proveedor exists
     IF @id IS NOT NULL AND @id > 0 AND EXISTS (SELECT 1 FROM Proveedor WHERE id = @id)
-BEGIN
+        BEGIN
             -- UPDATE
             UPDATE Proveedor
             SET nombre = @nombre,
@@ -274,8 +274,8 @@ BEGIN
             INSERT INTO Proveedor (nombre, apiEndpoint, tipoServicio, clientId, apiKey)
             VALUES (@nombre, @apiEndpoint, @tipoServicio, @clientId, @apiKey);
 
-SET @id = SCOPE_IDENTITY();
-END
+            SET @id = SCOPE_IDENTITY();
+        END
 
     -- Return the saved proveedor
     SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey
@@ -295,21 +295,21 @@ CREATE OR ALTER PROCEDURE sp_assign_product_to_provider
     @estado INT = 1
 AS
 BEGIN
-        SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-        -- Validate that proveedor exists
-        IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
-BEGIN
-                RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
-                RETURN;
-END
+    -- Validate that proveedor exists
+    IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
+        BEGIN
+            RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
+            RETURN;
+        END
 
-        -- Validate that producto exists
-        IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoProducto)
-BEGIN
-                RAISERROR('Producto with barcode %d does not exist.', 16, 1, @codigoProducto);
-                RETURN;
-END
+    -- Validate that producto exists
+    IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoProducto)
+        BEGIN
+            RAISERROR('Producto with barcode %d does not exist.', 16, 1, @codigoProducto);
+            RETURN;
+        END
 
     -- Check if relationship already exists
     IF EXISTS (SELECT 1 FROM ProductoProveedor
@@ -332,8 +332,8 @@ END
             INSERT INTO ProductoProveedor (idProveedor, codigoBarra, codigoBarraProveedor, fechaActualizacion, estado)
             VALUES (@idProveedor, @codigoProducto, @codigoBarraProveedor, GETDATE(), @estado);
 
-PRINT 'Relationship created.';
-END
+            PRINT 'Relationship created.';
+        END
 
     -- Return the relationship with details
     SELECT pp.idProveedor, pp.codigoBarra, pp.codigoBarraProveedor, pp.fechaActualizacion, pp.estado,
@@ -357,28 +357,28 @@ CREATE OR ALTER PROCEDURE sp_create_pedido
     @evaluacionEscala SMALLINT = NULL
 AS
 BEGIN
-      SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-      -- Validate proveedor exists
-      IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @proveedor)
-BEGIN
-          RAISERROR('Proveedor with id %d does not exist.', 16, 1, @proveedor);
-          RETURN;
-END
+    -- Validate proveedor exists
+    IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @proveedor)
+        BEGIN
+            RAISERROR('Proveedor with id %d does not exist.', 16, 1, @proveedor);
+            RETURN;
+        END
 
-      -- Validate estado exists
-      IF NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE id = @estado)
-BEGIN
-          RAISERROR('EstadoPedido with id %d does not exist.', 16, 1, @estado);
-          RETURN;
-END
+    -- Validate estado exists
+    IF NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE id = @estado)
+        BEGIN
+            RAISERROR('EstadoPedido with id %d does not exist.', 16, 1, @estado);
+            RETURN;
+        END
 
     DECLARE @newId INT; -- Cambiado de SMALLINT a INT para coincidir con Pedido.id (IDENTITY)
 
     INSERT INTO Pedido (estado, proveedor, fechaEntrega, evaluacionEscala)
     VALUES (@estado, @proveedor, @fechaEntrega, @evaluacionEscala);
 
-SET @newId = SCOPE_IDENTITY();
+    SET @newId = SCOPE_IDENTITY();
 
     -- Return the created pedido with estado and proveedor info
     SELECT
@@ -407,7 +407,7 @@ CREATE OR ALTER PROCEDURE sp_find_pedido_by_id
 @id INT -- Cambiado de SMALLINT a INT
 AS
 BEGIN
-      SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
     SELECT
         p.id,
@@ -441,7 +441,7 @@ GO
 CREATE OR ALTER PROCEDURE sp_find_all_pedidos
 AS
 BEGIN
-      SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
     SELECT
         p.id,
@@ -479,21 +479,21 @@ CREATE OR ALTER PROCEDURE sp_update_pedido
     @evaluacionEscala SMALLINT = NULL
 AS
 BEGIN
-      SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-      -- Validate pedido exists
-      IF NOT EXISTS (SELECT 1 FROM Pedido WHERE id = @id)
-BEGIN
-          RAISERROR('Pedido with id %d does not exist.', 16, 1, @id);
-          RETURN;
-END
+    -- Validate pedido exists
+    IF NOT EXISTS (SELECT 1 FROM Pedido WHERE id = @id)
+        BEGIN
+            RAISERROR('Pedido with id %d does not exist.', 16, 1, @id);
+            RETURN;
+        END
 
-      -- Validate estado exists
-      IF NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE id = @estado)
-BEGIN
-          RAISERROR('EstadoPedido with id %d does not exist.', 16, 1, @estado);
-          RETURN;
-END
+    -- Validate estado exists
+    IF NOT EXISTS (SELECT 1 FROM EstadoPedido WHERE id = @estado)
+        BEGIN
+            RAISERROR('EstadoPedido with id %d does not exist.', 16, 1, @estado);
+            RETURN;
+        END
 
     UPDATE Pedido
     SET estado = @estado,
@@ -528,16 +528,16 @@ CREATE OR ALTER PROCEDURE sp_delete_pedido
 @id INT -- Cambiado de SMALLINT a INT
 AS
 BEGIN
-      SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-      -- Validate pedido exists
-      IF NOT EXISTS (SELECT 1 FROM Pedido WHERE id = @id)
-BEGIN
-          RAISERROR('Pedido with id %d does not exist.', 16, 1, @id);
-          RETURN;
-END
+    -- Validate pedido exists
+    IF NOT EXISTS (SELECT 1 FROM Pedido WHERE id = @id)
+        BEGIN
+            RAISERROR('Pedido with id %d does not exist.', 16, 1, @id);
+            RETURN;
+        END
 
-DELETE FROM Pedido WHERE id = @id;
+    DELETE FROM Pedido WHERE id = @id;
 END
 GO
 
@@ -550,14 +550,14 @@ CREATE OR ALTER PROCEDURE sp_find_pedidos_by_proveedor
 @proveedorId INT -- Cambiado de SMALLINT a INT
 AS
 BEGIN
-      SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-      -- Validate proveedor exists
-      IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @proveedorId)
-BEGIN
-          RAISERROR('Proveedor with id %d does not exist.', 16, 1, @proveedorId);
-          RETURN;
-END
+    -- Validate proveedor exists
+    IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @proveedorId)
+        BEGIN
+            RAISERROR('Proveedor with id %d does not exist.', 16, 1, @proveedorId);
+            RETURN;
+        END
 
     SELECT
         p.id,
@@ -590,10 +590,10 @@ BEGIN
 
     -- Validate pedido exists
     IF NOT EXISTS (SELECT 1 FROM Pedido WHERE id = @idPedido)
-    BEGIN
-        RAISERROR('Pedido with id %d does not exist.', 16, 1, @idPedido);
-        RETURN;
-    END
+        BEGIN
+            RAISERROR('Pedido with id %d does not exist.', 16, 1, @idPedido);
+            RETURN;
+        END
 
     SELECT
         pp.idPedido,
@@ -602,7 +602,7 @@ BEGIN
         p.nombre AS productoNombre,
         p.imagen AS productoImagen
     FROM PedidoProducto pp
-    INNER JOIN Producto p ON pp.codigoBarra = p.codigoBarra
+             INNER JOIN Producto p ON pp.codigoBarra = p.codigoBarra
     WHERE pp.idPedido = @idPedido
     ORDER BY p.nombre;
 END

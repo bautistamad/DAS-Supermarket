@@ -5,23 +5,19 @@ import ubp.edu.com.ar.finalproyect.domain.Pedido;
 
 import java.util.List;
 
-/**
- * Port interface for external provider integrations (REST/SOAP)
- * Defines the contract for communicating with external providers
- * Works with domain entities, not DTOs (DTOs are adapter implementation details)
- */
+
 public interface ProveedorIntegration {
 
-    boolean checkHealth(String apiEndpoint, String apiKey);
+    boolean checkHealth(String apiEndpoint, String clientId, String apiKey);
 
-//    List<Producto> getProductos(String apiEndpoint, String apiKey);
+//    List<Producto> getProductos(String apiEndpoint, String clientId, String apiKey);
 
-//    Pedido estimarPedido(String apiEndpoint, String apiKey, Pedido pedido);
+//    Pedido estimarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido);
 //
-//    Pedido asignarPedido(String apiEndpoint, String apiKey, Pedido pedido);
+//    Pedido asignarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido);
 //
-//    Pedido consultarEstado(String apiEndpoint, String apiKey, Integer idPedido);
+//    Pedido consultarEstado(String apiEndpoint, String clientId, String apiKey, Integer idPedido);
 //
-//    Pedido cancelarPedido(String apiEndpoint, String apiKey, Integer idPedido);
+    Pedido cancelarPedido(String apiEndpoint, String clientId, String apiKey, Integer idPedido);
 //
 }

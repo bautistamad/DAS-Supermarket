@@ -126,3 +126,4 @@ BEGIN
     PRINT 'HistorialPrecio table already exists.';
 END
 GO
+
