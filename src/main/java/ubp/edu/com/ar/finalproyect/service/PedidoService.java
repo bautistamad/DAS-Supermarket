@@ -107,14 +107,6 @@ public class PedidoService {
         return repository.findProductsByPedidoId(pedidoId);
     }
 
-    /**
-     * Cancel an order with the external provider and update the order status
-     *
-     * @param pedidoId The order ID to cancel
-     * @return Updated Pedido with cancellation status
-     * @throws PedidoNotFoundException if the order doesn't exist
-     * @throws IllegalStateException if the order cannot be cancelled (already delivered, etc)
-     */
     public Pedido cancelarPedido(Integer pedidoId) {
         if (pedidoId == null) {
             throw new IllegalArgumentException("Pedido id cannot be null");
