@@ -23,6 +23,13 @@ public class SoapProveedorAdapter implements ProveedorIntegration {
     }
 
     @Override
+    public List<Producto> getProductos(String apiEndpoint, String clientId, String apiKey) {
+        logger.warn("SOAP adapter stub called for getProductos. WSDL: {}, clientId: {}", apiEndpoint, clientId);
+        logger.info("Returning empty list - SOAP adapter not yet implemented");
+        return new ArrayList<>();
+    }
+
+    @Override
     public Pedido cancelarPedido(String apiEndpoint, String clientId, String apiKey, Integer idPedido) {
         logger.warn("SOAP adapter stub called for cancelarPedido. WSDL: {}, clientId: {}, pedidoId: {}",
             apiEndpoint, clientId, idPedido);

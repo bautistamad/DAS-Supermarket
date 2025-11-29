@@ -522,6 +522,100 @@ GO
 
 
 -- =============================================
+-- Sync precio from external provider
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_sync_precio_from_proveedor
+    @codigoBarra INT,
+    @precio FLOAT,
+    @idProveedor INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @now DATETIME = GETDATE();
+    DECLARE @precioActual FLOAT;
+    DECLARE @action NVARCHAR(50);
+
+    BEGIN TRANSACTION;
+    BEGIN TRY
+
+        -- Validate product exists
+        IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoBarra)
+        BEGIN
+            ROLLBACK TRANSACTION;
+            SELECT
+                @codigoBarra AS codigoBarra,
+                'ERROR' AS status,
+                'PRODUCT_NOT_FOUND' AS action,
+                'Producto no existe' AS errorMessage;
+            RETURN;
+        END
+
+        -- Get current price for this product-provider combination
+        SELECT @precioActual = precio
+        FROM HistorialPrecio
+        WHERE codigoBarra = @codigoBarra
+          AND idProveedor = @idProveedor
+          AND fechaFin IS NULL;
+
+        -- Check if price changed or doesn't exist
+        IF @precioActual IS NULL OR @precioActual != @precio
+        BEGIN
+            -- Close previous price if exists
+            IF @precioActual IS NOT NULL
+            BEGIN
+                UPDATE HistorialPrecio
+                SET fechaFin = @now
+                WHERE codigoBarra = @codigoBarra
+                  AND idProveedor = @idProveedor
+                  AND fechaFin IS NULL;
+
+                SET @action = 'PRICE_UPDATED';
+            END
+            ELSE
+            BEGIN
+                SET @action = 'PRICE_CREATED';
+            END
+
+            -- Insert new price record
+            INSERT INTO HistorialPrecio (codigoBarra, idProveedor, precio, fechaInicio, fechaFin)
+            VALUES (@codigoBarra, @idProveedor, @precio, @now, NULL);
+
+            COMMIT TRANSACTION;
+
+            SELECT
+                @codigoBarra AS codigoBarra,
+                'SUCCESS' AS status,
+                @action AS action,
+                @precioActual AS precioAnterior,
+                @precio AS precioNuevo;
+        END
+        ELSE
+        BEGIN
+            -- Price unchanged
+            COMMIT TRANSACTION;
+
+            SELECT
+                @codigoBarra AS codigoBarra,
+                'SUCCESS' AS status,
+                'PRICE_UNCHANGED' AS action,
+                @precio AS precioActual;
+        END
+
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+
+        SELECT
+            @codigoBarra AS codigoBarra,
+            'ERROR' AS status,
+            'EXCEPTION' AS action,
+            ERROR_MESSAGE() AS errorMessage;
+    END CATCH
+END
+GO
+
+-- =============================================
 -- Delete pedido
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_delete_pedido

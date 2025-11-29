@@ -1,7 +1,5 @@
 package ubp.edu.com.ar.finalproyect.adapter.external.rest;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -13,13 +11,10 @@ import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.port.ProveedorIntegration;
 import ubp.edu.com.ar.finalproyect.utils.Httpful;
 
-import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component("restProveedorAdapter")
 public class RestProveedorAdapter implements ProveedorIntegration {
@@ -54,6 +49,58 @@ public class RestProveedorAdapter implements ProveedorIntegration {
             logger.error("Health check failed for endpoint: {}", apiEndpoint, e);
             return false;
         }
+    }
+
+    @Override
+    public List<Producto> getProductos(String apiEndpoint, String clientId, String apiKey) {
+        try {
+            logger.info("Fetching products from provider: {} (clientId: {})", apiEndpoint, clientId);
+
+            // Provider returns array directly: [{...}, {...}]
+            ProductoProveedorDTO[] productosArray = new Httpful(apiEndpoint)
+                    .path("/api/productos")
+                    .addQueryParam("clientId", clientId)
+                    .addQueryParam("apikey", apiKey)
+                    .get()
+                    .execute(ProductoProveedorDTO[].class);
+
+            if (productosArray == null || productosArray.length == 0) {
+                logger.warn("Received null or empty product array from provider: {}", apiEndpoint);
+                return new ArrayList<>();
+            }
+
+            logger.info("Successfully fetched {} products from provider", productosArray.length);
+
+            // Convert DTO array to Domain list
+            List<Producto> productos = new ArrayList<>();
+            for (ProductoProveedorDTO dto : productosArray) {
+                productos.add(convertToDomain(dto));
+            }
+            return productos;
+
+        } catch (Exception e) {
+            logger.error("Failed to fetch products from provider endpoint: {}", apiEndpoint, e);
+            return new ArrayList<>();
+        }
+    }
+
+
+    private Producto convertToDomain(ProductoProveedorDTO dto) {
+        Producto producto = new Producto();
+        producto.setCodigoBarra(dto.getCodigoBarra());
+        producto.setNombre(dto.getNombre());
+
+        // Create a HistorialPrecio with the current price
+        HistorialPrecio precio = new HistorialPrecio();
+        precio.setCodigoBarra(dto.getCodigoBarra());
+        precio.setPrecio(dto.getPrecio());
+        precio.setFechaInicio(LocalDateTime.now());
+        precio.setFechaFin(null); // Current price
+
+        // Set the price in the producto
+        producto.setPrecios(List.of(precio));
+
+        return producto;
     }
 
     @Override

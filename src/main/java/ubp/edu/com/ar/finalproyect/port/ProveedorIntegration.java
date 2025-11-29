@@ -1,5 +1,6 @@
 package ubp.edu.com.ar.finalproyect.port;
 
+import ubp.edu.com.ar.finalproyect.domain.HistorialPrecio;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
 
@@ -10,7 +11,7 @@ public interface ProveedorIntegration {
 
     boolean checkHealth(String apiEndpoint, String clientId, String apiKey);
 
-//    List<Producto> getProductos(String apiEndpoint, String clientId, String apiKey);
+    List<Producto> getProductos(String apiEndpoint, String clientId, String apiKey);
 
 //    Pedido estimarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido);
 //
