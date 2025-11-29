@@ -63,12 +63,20 @@ public class ProductoService {
         repository.deleteByBarCode(barCode);
     }
 
-    public List<Producto> getProductoByProveedor(Integer providerId) {
+    public List<Producto> getProductoByProveedor(Integer providerId, Boolean priceHistory) {
         if (providerId == null) {
             throw new IllegalArgumentException("Proveedor ID cannot be null");
         }
 
-        return repository.findByProviderId(providerId);
+        List<Producto> productos = repository.findByProviderId(providerId);
+
+        if (priceHistory != null && priceHistory) {
+            productos.forEach(producto -> {
+                producto.setPrecios(historialPrecioRepository.findByProducto(producto.getCodigoBarra()));
+            });
+        }
+
+        return productos;
     }
 
 }

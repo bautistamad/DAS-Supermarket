@@ -48,8 +48,8 @@ public class ProductoController {
 
     // GET /api/producto/provider/{id} - Get products by provider ID
     @GetMapping("/proveedor/{id}")
-    public ResponseEntity<List<Producto>> getProductsByProvider(@PathVariable Integer id) {
-        List<Producto> productos = productoService.getProductoByProveedor(id);
+    public ResponseEntity<List<Producto>> getProductsByProvider(@PathVariable Integer id, @RequestParam(defaultValue = "false") Boolean history) {
+        List<Producto> productos = productoService.getProductoByProveedor(id, history);
         return ResponseEntity.ok(productos);
     }
 
