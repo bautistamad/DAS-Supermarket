@@ -25,6 +25,7 @@ DELETE FROM PedidoProducto;
 DELETE FROM Pedido;
 DELETE FROM HistorialPrecio;
 DELETE FROM ProductoProveedor;
+DELETE FROM Escala;
 DELETE FROM Producto;
 DELETE FROM Proveedor;
 DELETE FROM EstadoPedido;
@@ -37,6 +38,7 @@ DBCC CHECKIDENT ('TipoServicio', RESEED, 0);
 DBCC CHECKIDENT ('Proveedor', RESEED, 0);
 DBCC CHECKIDENT ('EstadoPedido', RESEED, 0);
 DBCC CHECKIDENT ('Pedido', RESEED, 0);
+DBCC CHECKIDENT ('Escala', RESEED, 0);
 
 PRINT 'Database cleaned successfully!';
 PRINT '';

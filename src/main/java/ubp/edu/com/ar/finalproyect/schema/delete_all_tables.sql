@@ -14,4 +14,6 @@ DROP TABLE IF EXISTS dbo.Producto;
 DROP TABLE IF EXISTS dbo.Proveedor;
 DROP TABLE IF EXISTS dbo.EstadoProducto;
 DROP TABLE IF EXISTS dbo.EstadoPedido;
+DROP TABLE IF EXISTS dbo.Escala;
+DROP TABLE IF EXISTS dbo.TipoServicio;
 GO

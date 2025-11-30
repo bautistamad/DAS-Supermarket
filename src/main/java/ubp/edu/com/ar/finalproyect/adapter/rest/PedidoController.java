@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
 import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
 import ubp.edu.com.ar.finalproyect.service.PedidoService;
+import ubp.edu.com.ar.finalproyect.service.ProveedorIntegrationService;
 
 import java.util.List;
 
@@ -14,9 +15,11 @@ import java.util.List;
 public class PedidoController {
 
     private final PedidoService pedidoService;
+    private final ProveedorIntegrationService integrationService;
 
-    public PedidoController(PedidoService pedidoService) {
+    public PedidoController(PedidoService pedidoService, ProveedorIntegrationService integrationService) {
         this.pedidoService = pedidoService;
+        this.integrationService = integrationService;
     }
 
     // POST /api/pedidos - Create a new Pedido

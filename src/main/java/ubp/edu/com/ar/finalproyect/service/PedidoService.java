@@ -3,13 +3,17 @@ package ubp.edu.com.ar.finalproyect.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
 import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
+import ubp.edu.com.ar.finalproyect.domain.Proveedor;
 import ubp.edu.com.ar.finalproyect.exception.PedidoNotFoundException;
 import ubp.edu.com.ar.finalproyect.port.PedidoRepository;
+import ubp.edu.com.ar.finalproyect.port.ProveedorRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PedidoService {
@@ -17,13 +21,20 @@ public class PedidoService {
     private static final Logger logger = LoggerFactory.getLogger(PedidoService.class);
 
     private final PedidoRepository repository;
+    private final ProveedorRepository proveedorRepository;
     private final ProveedorIntegrationService integrationService;
+    private final EscalaService escalaService;
 
-    public PedidoService(PedidoRepository repository, ProveedorIntegrationService integrationService) {
+    public PedidoService(PedidoRepository repository, ProveedorRepository proveedorRepository,
+                         ProveedorIntegrationService integrationService,
+                         EscalaService escalaService) {
         this.repository = repository;
+        this.proveedorRepository = proveedorRepository;
         this.integrationService = integrationService;
+        this.escalaService = escalaService;
     }
 
+    @Transactional
     public Pedido createPedido(Pedido pedido) {
         // Validate input
         if (pedido == null) {
@@ -35,8 +46,41 @@ public class PedidoService {
         if (pedido.getProveedorId() == null) {
             throw new IllegalArgumentException("Pedido proveedor cannot be null");
         }
+        if (pedido.getProductos() == null || pedido.getProductos().isEmpty()) {
+            throw new IllegalArgumentException("Pedido must have at least one product");
+        }
 
-        return repository.save(pedido);
+        logger.info("Creating order with provider {}", pedido.getProveedorId());
+
+
+        // Step 2: Save order in our database (estado: Pendiente = 1)
+        logger.info("Step 2: Saving order in local database");
+        Pedido pedidoGuardado = repository.save(pedido);
+
+        if (pedidoGuardado.getId() == null) {
+            logger.error("Failed to save order in database");
+            throw new IllegalStateException("Failed to save order in database");
+        }
+
+        logger.info("Order saved locally with ID: {}", pedidoGuardado.getId());
+
+        // Step 3: Assign order with provider (confirm order)
+        logger.info("Step 3: Assigning order {} with provider {}",
+                pedidoGuardado.getId(), pedido.getProveedorId());
+
+        logger.info("Order {} successfully assigned with provider {}",
+                pedidoGuardado.getId(), pedido.getProveedorId());
+
+        // Step 4: Update order with confirmation from provider (estado: Confirmado = 2)
+        logger.info("Step 4: Updating order {} status to Confirmado", pedidoGuardado.getId());
+        pedidoGuardado.setEstadoId(2); // Confirmado
+
+        Pedido pedidoFinal = repository.update(pedidoGuardado);
+
+        logger.info("Order {} created and confirmed successfully with provider {}",
+                pedidoFinal.getId(), pedido.getProveedorId());
+
+        return pedidoFinal;
     }
 
     public Pedido updatePedido(Pedido pedido) {
@@ -107,6 +151,86 @@ public class PedidoService {
         return repository.findProductsByPedidoId(pedidoId);
     }
 
+    /**
+     * Query order status from provider and update local database
+     * Useful for syncing order status (En Preparación, En Tránsito, Entregado, etc.)
+     */
+    @Transactional
+    public Pedido consultarEstadoPedido(Integer pedidoId) {
+        if (pedidoId == null) {
+            throw new IllegalArgumentException("Pedido id cannot be null");
+        }
+
+        logger.info("Querying status for order {}", pedidoId);
+
+        // Get the existing order
+        Pedido pedido = repository.findById(pedidoId)
+                .orElseThrow(() -> new PedidoNotFoundException(pedidoId));
+
+        // Query status from provider
+        Pedido estadoProveedor = integrationService.consultarEstadoPedido(
+                pedido.getProveedorId(),
+
+                pedidoId
+        );
+
+        if (estadoProveedor == null) {
+            logger.warn("Provider did not return status for order {}", pedidoId);
+            throw new IllegalStateException(
+                    "Failed to query order status from provider. Please try again later."
+            );
+        }
+
+        logger.info("Provider returned status for order {}: {}",
+                pedidoId, estadoProveedor.getEstadoNombre());
+
+        // Map provider status to our internal estado ID
+        Integer nuevoEstadoId = mapProviderStatusToEstadoId(estadoProveedor.getEstadoNombre());
+
+        if (nuevoEstadoId != null && !nuevoEstadoId.equals(pedido.getEstadoId())) {
+            logger.info("Updating order {} status from {} to {}",
+                    pedidoId, pedido.getEstadoId(), nuevoEstadoId);
+
+            pedido.setEstadoId(nuevoEstadoId);
+            pedido.setEstadoNombre(estadoProveedor.getEstadoNombre());
+            pedido.setEstadoDescripcion(estadoProveedor.getEstadoDescripcion());
+
+            // Update in database
+            Pedido updated = repository.update(pedido);
+
+            logger.info("Successfully updated order {} status to {}",
+                    pedidoId, estadoProveedor.getEstadoNombre());
+
+            return updated;
+        } else {
+            logger.info("Order {} status unchanged: {}", pedidoId, pedido.getEstadoNombre());
+            return pedido;
+        }
+    }
+
+    /**
+     * Map provider's status string to our internal EstadoPedido ID
+     * Provider statuses: "Asignado", "En Proceso", "En camino", "Entregado", "Cancelado"
+     * Our statuses: 1=Pendiente, 2=Confirmado, 3=En Preparación, 4=En Tránsito, 5=Entregado, 6=Cancelado
+     */
+    private Integer mapProviderStatusToEstadoId(String providerStatus) {
+        if (providerStatus == null) {
+            return null;
+        }
+
+        return switch (providerStatus.toLowerCase()) {
+            case "asignado" -> 2;           // Confirmado
+            case "en proceso" -> 3;         // En Preparación
+            case "en camino" -> 4;          // En Tránsito
+            case "entregado" -> 5;          // Entregado
+            case "cancelado" -> 6;          // Cancelado
+            default -> {
+                logger.warn("Unknown provider status: {}", providerStatus);
+                yield null;
+            }
+        };
+    }
+
     public Pedido cancelarPedido(Integer pedidoId) {
         if (pedidoId == null) {
             throw new IllegalArgumentException("Pedido id cannot be null");
@@ -135,7 +259,7 @@ public class PedidoService {
         if (pedidoCancelado == null) {
             logger.warn("Provider did not confirm cancellation for order {}", pedidoId);
             throw new IllegalStateException(
-                "Failed to cancel order with provider. Order may have already been sent or cannot be cancelled."
+                    "Failed to cancel order with provider. Order may have already been sent or cannot be cancelled."
             );
         }
 

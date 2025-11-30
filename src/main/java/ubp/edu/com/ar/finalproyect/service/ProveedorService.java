@@ -3,6 +3,8 @@ package ubp.edu.com.ar.finalproyect.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import ubp.edu.com.ar.finalproyect.domain.Escala;
+import ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion;
 import ubp.edu.com.ar.finalproyect.domain.Proveedor;
 import ubp.edu.com.ar.finalproyect.exception.ProveedorNotFoundException;
 import ubp.edu.com.ar.finalproyect.port.ProveedorRepository;
@@ -17,10 +19,14 @@ public class ProveedorService {
 
     private final ProveedorRepository repository;
     private final ProveedorIntegrationService integrationService;
+    private final EscalaService escalaService;
 
-    public ProveedorService(ProveedorRepository repository, ProveedorIntegrationService integrationService) {
+    public ProveedorService(ProveedorRepository repository,
+                           ProveedorIntegrationService integrationService,
+                           EscalaService escalaService) {
         this.repository = repository;
         this.integrationService = integrationService;
+        this.escalaService = escalaService;
     }
 
     public Proveedor createProveedor(Proveedor proveedor) {
@@ -65,7 +71,46 @@ public class ProveedorService {
 
         logger.info("Health check passed for provider: {}", proveedor.getName());
 
-        return repository.save(proveedor);
+        // Save provider
+        Proveedor saved = repository.save(proveedor);
+        logger.info("Provider saved with ID: {}", saved.getId());
+
+        // Fetch and save rating scale from provider (unmapped)
+        try {
+            logger.info("Fetching rating scale from provider {}", saved.getId());
+
+            List<EscalaDefinicion> escalasExternas =
+                integrationService.fetchEscalaFromProveedor(saved.getId());
+
+            if (escalasExternas != null && !escalasExternas.isEmpty()) {
+                logger.info("Successfully fetched {} scale values from provider {}",
+                    escalasExternas.size(), saved.getId());
+
+                // Save scales WITHOUT mapping (escalaInt = null)
+                // User will map them later via frontend
+                for (EscalaDefinicion def : escalasExternas) {
+                    Escala escala = new Escala();
+                    escala.setIdProveedor(saved.getId());
+                    escala.setEscalaInt(null);  // NOT YET MAPPED
+                    escala.setEscalaExt(def.getValor());
+                    escala.setDescripcionExt(def.getDescripcion());
+
+                    escalaService.saveMapping(escala);
+                }
+
+                logger.info("Saved {} unmapped scale values for provider {}",
+                    escalasExternas.size(), saved.getId());
+            } else {
+                logger.warn("No scale values received from provider {}", saved.getId());
+            }
+
+        } catch (Exception e) {
+            logger.error("Error fetching scale from provider {}: {}",
+                saved.getId(), e.getMessage());
+            // Continue anyway - scales can be created manually later
+        }
+
+        return saved;
     }
 
     public Optional<Proveedor> getProveedor(Integer id) {

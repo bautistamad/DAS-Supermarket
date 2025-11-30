@@ -137,7 +137,8 @@ public class Httpful {
                     return null;
                 }
                 String json = response.readEntity(String.class);
-                if (json == null || json.isBlank()) return null;
+                if (json == null || json.isBlank())
+                    return null;
 
                 JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
                 JsonElement element = jsonObject.get(wrapperKey);
@@ -153,11 +154,11 @@ public class Httpful {
             String errorBody = safeReadBody(response);
             String message = "Error HTTP " + status;
             String detail = extractMessageFromJson(errorBody);
-            if (!detail.isEmpty()) message += " - " + detail;
+            if (!detail.isEmpty())
+                message += " - " + detail;
 
             throw new RuntimeException(message + (errorBody.isEmpty() ? "" : (": " + errorBody)));
-        }
-        finally {
+        } finally {
             response.close();
         }
     }
@@ -176,7 +177,8 @@ public class Httpful {
                     return null;
                 }
                 String json = response.readEntity(String.class);
-                if (json == null || json.isBlank()) return null;
+                if (json == null || json.isBlank())
+                    return null;
 
                 JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
                 JsonElement element = jsonObject.get(wrapperKey);
@@ -192,11 +194,11 @@ public class Httpful {
             String errorBody = safeReadBody(response);
             String message = "Error HTTP " + status;
             String detail = extractMessageFromJson(errorBody);
-            if (!detail.isEmpty()) message += " - " + detail;
+            if (!detail.isEmpty())
+                message += " - " + detail;
 
             throw new RuntimeException(message + (errorBody.isEmpty() ? "" : (": " + errorBody)));
-        }
-        finally {
+        } finally {
             response.close();
         }
     }
@@ -214,7 +216,8 @@ public class Httpful {
                     return null;
                 }
                 String json = response.readEntity(String.class);
-                if (json == null || json.isBlank()) return null;
+                if (json == null || json.isBlank())
+                    return null;
 
                 if (responseType instanceof Class<?>) {
                     return this.gson.fromJson(json, (Class<T>) responseType);
@@ -227,11 +230,11 @@ public class Httpful {
             String errorBody = safeReadBody(response);
             String message = "Error HTTP " + status;
             String detail = extractMessageFromJson(errorBody);
-            if (!detail.isEmpty()) message += " - " + detail;
+            if (!detail.isEmpty())
+                message += " - " + detail;
 
             throw new RuntimeException(message + (errorBody.isEmpty() ? "" : (": " + errorBody)));
-        }
-        finally {
+        } finally {
             response.close();
         }
     }
@@ -257,22 +260,25 @@ public class Httpful {
         try {
             String s = response.readEntity(String.class);
             return s == null ? "" : s;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return "";
         }
     }
 
     private String extractMessageFromJson(String body) {
         try {
-            if (body == null || body.isBlank()) return "";
+            if (body == null || body.isBlank())
+                return "";
             JsonObject obj = JsonParser.parseString(body).getAsJsonObject();
             // campos comunes en APIs
-            if (obj.has("message")) return obj.get("message").getAsString();
-            if (obj.has("error_description")) return obj.get("error_description").getAsString();
-            if (obj.has("error")) return obj.get("error").getAsString();
+            if (obj.has("message"))
+                return obj.get("message").getAsString();
+            if (obj.has("error_description"))
+                return obj.get("error_description").getAsString();
+            if (obj.has("error"))
+                return obj.get("error").getAsString();
+        } catch (Exception ignored) {
         }
-        catch (Exception ignored) {}
         return "";
     }
 

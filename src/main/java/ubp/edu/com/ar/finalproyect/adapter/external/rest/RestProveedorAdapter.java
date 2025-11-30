@@ -3,10 +3,13 @@ package ubp.edu.com.ar.finalproyect.adapter.external.rest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.*;
+import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.CancelacionPedido;
+import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.HealthResponse;
+import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.PonderacionDTO;
+import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.ProductoProveedorDTO;
+import ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion;
 import ubp.edu.com.ar.finalproyect.domain.HistorialPrecio;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
-import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.port.ProveedorIntegration;
 import ubp.edu.com.ar.finalproyect.utils.Httpful;
@@ -15,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component("restProveedorAdapter")
 public class RestProveedorAdapter implements ProveedorIntegration {
@@ -84,6 +88,48 @@ public class RestProveedorAdapter implements ProveedorIntegration {
         }
     }
 
+    @Override
+    public List<EscalaDefinicion> getEscala(String apiEndpoint, String clientId, String apiKey) {
+        try {
+            logger.info("Fetching rating scale from provider: {} (clientId: {})", apiEndpoint, clientId);
+
+            // Provider uses /api/ponderaciones endpoint
+            PonderacionDTO[] ponderaciones = new Httpful(apiEndpoint)
+                    .path("/api/ponderaciones")
+                    .addQueryParam("clientId", clientId)
+                    .addQueryParam("apikey", apiKey)
+                    .get()
+                    .execute(PonderacionDTO[].class);
+
+            if (ponderaciones == null || ponderaciones.length == 0) {
+                logger.warn("Received null or empty ponderacion array from provider: {}", apiEndpoint);
+                return new ArrayList<>();
+            }
+
+            logger.info("Successfully fetched {} scale values from provider", ponderaciones.length);
+
+            // Convert PonderacionDTO to EscalaDefinicion
+            List<EscalaDefinicion> escalas = new ArrayList<>();
+            for (PonderacionDTO ponderacion : ponderaciones) {
+                EscalaDefinicion escala = new EscalaDefinicion();
+                // Convert puntuacion (int) to valor (String)
+                escala.setValor(String.valueOf(ponderacion.getPuntuacion()));
+                escala.setDescripcion(ponderacion.getDescripcion());
+                escalas.add(escala);
+            }
+
+            return escalas;
+
+        } catch (Exception e) {
+            logger.error("Failed to fetch scale from provider endpoint: {}", apiEndpoint, e);
+            return new ArrayList<>();
+        }
+    }
+
+    @Override
+    public Pedido consultarEstado(String apiEndpoint, String clientId, String apiKey, Integer idPedido) {
+        return null;
+    }
 
     private Producto convertToDomain(ProductoProveedorDTO dto) {
         Producto producto = new Producto();
@@ -106,7 +152,8 @@ public class RestProveedorAdapter implements ProveedorIntegration {
     @Override
     public Pedido cancelarPedido(String apiEndpoint, String clientId, String apiKey, Integer idPedido) {
         try {
-            logger.info("Attempting to cancel order {} with provider: {} (clientId: {})", idPedido, apiEndpoint, clientId);
+            logger.info("Attempting to cancel order {} with provider: {} (clientId: {})", idPedido, apiEndpoint,
+                    clientId);
 
             CancelacionPedido response = new Httpful(apiEndpoint)
                     .path("/api/cancelarPedido")
@@ -146,4 +193,5 @@ public class RestProveedorAdapter implements ProveedorIntegration {
             return null;
         }
     }
+
 }

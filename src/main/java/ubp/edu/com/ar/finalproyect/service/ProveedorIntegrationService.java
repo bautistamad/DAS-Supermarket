@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.domain.Proveedor;
@@ -70,7 +71,40 @@ public class ProveedorIntegrationService {
         }
     }
 
+    /**
+     * Query order status from provider
+     * Returns current status of the order at the provider
+     */
+    public Pedido consultarEstadoPedido(Integer proveedorId, Integer pedidoId) {
+        logger.info("Querying status for order {} from provider ID: {}", pedidoId, proveedorId);
 
+        Proveedor proveedor = getProveedor(proveedorId);
+
+        try {
+            ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
+            Pedido pedidoEstado = adapter.consultarEstado(
+                proveedor.getApiEndpoint(),
+                proveedor.getClientId(),
+                proveedor.getApiKey(),
+                pedidoId
+            );
+
+            if (pedidoEstado != null) {
+                logger.info("Successfully queried status for order {} from provider {}: {}",
+                    pedidoId, proveedorId, pedidoEstado.getEstadoNombre());
+            } else {
+                logger.warn("Failed to query status for order {} from provider {}. Provider returned null.",
+                    pedidoId, proveedorId);
+            }
+
+            return pedidoEstado;
+
+        } catch (Exception e) {
+            logger.error("Exception occurred while querying status for order {} from provider {}",
+                pedidoId, proveedorId, e);
+            return null;
+        }
+    }
 
     public Pedido cancelarPedidoWithProveedor(Integer proveedorId, Integer pedidoId) {
         logger.info("Attempting to cancel order {} with provider ID: {}", pedidoId, proveedorId);
@@ -102,10 +136,6 @@ public class ProveedorIntegrationService {
         }
     }
 
-    /**
-     * Synchronize prices from an external provider
-     * Fetches products from provider and updates prices in our database
-     */
     @Transactional
     public Map<String, Integer> syncProductosFromProveedor(Integer proveedorId) {
         logger.info("Starting price sync for provider ID: {}", proveedorId);
@@ -184,6 +214,38 @@ public class ProveedorIntegrationService {
             result.put("pricesUpdated", result.get("pricesUpdated") + 1);
         }
     }
+
+    /**
+     * Fetch rating scale from provider's API
+     * Returns list of scale values (e.g., "Excelente", "Bueno", "Regular")
+     */
+    public List<ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion> fetchEscalaFromProveedor(Integer proveedorId) {
+        logger.info("Fetching rating scale for provider ID: {}", proveedorId);
+
+        Proveedor proveedor = getProveedor(proveedorId);
+
+        try {
+            ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
+            List<ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion> escalas = adapter.getEscala(
+                    proveedor.getApiEndpoint(),
+                    proveedor.getClientId(),
+                    proveedor.getApiKey()
+            );
+
+            if (escalas != null && !escalas.isEmpty()) {
+                logger.info("Successfully fetched {} scale values from provider {}", escalas.size(), proveedorId);
+            } else {
+                logger.warn("Provider {} returned empty or null scale", proveedorId);
+            }
+
+            return escalas;
+
+        } catch (Exception e) {
+            logger.error("Failed to fetch scale from provider {}", proveedorId, e);
+            return List.of();
+        }
+    }
+
 
     private Proveedor getProveedor(Integer proveedorId) {
         return proveedorRepository.findById(proveedorId)

@@ -701,3 +701,157 @@ BEGIN
     ORDER BY p.nombre;
 END
 GO
+
+
+-- =============================================
+-- ESCALA (Rating Scale) Stored Procedures - SIMPLIFIED
+-- =============================================
+
+-- =============================================
+-- sp_save_escala - Create or update scale mapping
+-- Allows NULL escalaInt for unmapped scales from provider
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_save_escala
+    @idEscala INT OUTPUT,
+    @idProveedor INT,
+    @escalaInt SMALLINT = NULL,
+    @escalaExt VARCHAR(50),
+    @descripcionExt VARCHAR(255) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate proveedor exists
+    IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
+        BEGIN
+            RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
+            RETURN;
+        END
+
+    -- Validate internal scale range (only if not NULL)
+    IF @escalaInt IS NOT NULL AND (@escalaInt < 1 OR @escalaInt > 5)
+        BEGIN
+            RAISERROR('Internal scale must be between 1 and 5, got: %d', 16, 1, @escalaInt);
+            RETURN;
+        END
+
+    -- Check if mapping exists
+    IF @idEscala IS NOT NULL AND @idEscala > 0 AND EXISTS (SELECT 1 FROM Escala WHERE idEscala = @idEscala)
+        BEGIN
+            -- UPDATE
+            UPDATE Escala
+            SET idProveedor = @idProveedor,
+                escalaInt = @escalaInt,
+                escalaExt = @escalaExt,
+                descripcionExt = @descripcionExt
+            WHERE idEscala = @idEscala;
+        END
+    ELSE
+        BEGIN
+            -- INSERT
+            INSERT INTO Escala (idProveedor, escalaInt, escalaExt, descripcionExt)
+            VALUES (@idProveedor, @escalaInt, @escalaExt, @descripcionExt);
+
+            SET @idEscala = SCOPE_IDENTITY();
+        END
+
+    -- Return the saved escala
+    SELECT idEscala, idProveedor, escalaInt, escalaExt, descripcionExt
+    FROM Escala
+    WHERE idEscala = @idEscala;
+END
+GO
+
+-- =============================================
+-- sp_find_escalas_by_proveedor - Get all mappings for a provider
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_find_escalas_by_proveedor
+    @idProveedor INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate proveedor exists
+    IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
+        BEGIN
+            RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
+            RETURN;
+        END
+
+    SELECT idEscala, idProveedor, escalaInt, escalaExt, descripcionExt
+    FROM Escala
+    WHERE idProveedor = @idProveedor
+    ORDER BY escalaInt ASC;
+END
+GO
+
+-- =============================================
+-- sp_find_escala_by_internal - Find external value from internal (1-5)
+-- Used when sending ratings TO provider (convert 5 -> "Excelente")
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_find_escala_by_internal
+    @idProveedor INT,
+    @escalaInt SMALLINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP 1 idEscala, idProveedor, escalaInt, escalaExt, descripcionExt
+    FROM Escala
+    WHERE idProveedor = @idProveedor
+      AND escalaInt = @escalaInt
+    ORDER BY idEscala ASC;
+END
+GO
+
+-- =============================================
+-- sp_update_pedido_evaluacion - Update order rating with validation
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_update_pedido_evaluacion
+    @idPedido INT,
+    @idEscala INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate pedido exists
+    IF NOT EXISTS (SELECT 1 FROM Pedido WHERE id = @idPedido)
+        BEGIN
+            RAISERROR('Pedido with id %d does not exist.', 16, 1, @idPedido);
+            RETURN;
+        END
+
+    -- Validate escala exists
+    IF NOT EXISTS (SELECT 1 FROM Escala WHERE idEscala = @idEscala)
+        BEGIN
+            RAISERROR('Escala with id %d does not exist.', 16, 1, @idEscala);
+            RETURN;
+        END
+
+    -- Validate pedido state is "Entregado" (5)
+    DECLARE @estadoId INT;
+    SELECT @estadoId = estado FROM Pedido WHERE id = @idPedido;
+
+    IF @estadoId != 5
+        BEGIN
+            RAISERROR('Pedido must be in Entregado state to be rated. Current state: %d', 16, 1, @estadoId);
+            RETURN;
+        END
+
+    -- Update evaluation
+    UPDATE Pedido
+    SET evaluacionEscala = @idEscala
+    WHERE id = @idPedido;
+
+    -- Return updated pedido
+    SELECT p.id, p.estado, p.proveedor, p.fechaEstimada, p.fechaEntrega,
+           p.fechaRegistro, p.evaluacionEscala,
+           ep.nombre AS estadoNombre,
+           ep.descripcion AS estadoDescripcion,
+           pr.nombre AS proveedorNombre
+    FROM Pedido p
+             LEFT JOIN EstadoPedido ep ON p.estado = ep.id
+             LEFT JOIN Proveedor pr ON p.proveedor = pr.id
+    WHERE p.id = @idPedido;
+END
+GO

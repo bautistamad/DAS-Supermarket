@@ -127,3 +127,37 @@ BEGIN
 END
 GO
 
+-- =============================================
+-- Create Escala Table (Rating Scale Mappings)
+-- =============================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Escala')
+BEGIN
+CREATE TABLE Escala (
+                        idEscala INT PRIMARY KEY IDENTITY(1,1),
+                        idProveedor INT NOT NULL,
+                        escalaInt SMALLINT NULL,
+                        escalaExt VARCHAR(50) NOT NULL,
+                        descripcionExt VARCHAR(255) NULL,
+
+                        -- Foreign Keys
+                        CONSTRAINT FK_Escala_Proveedor
+                            FOREIGN KEY (idProveedor) REFERENCES Proveedor(id) ON DELETE CASCADE,
+
+                        -- Constraints
+                        CONSTRAINT CHK_Escala_Internal
+                            CHECK (escalaInt IS NULL OR escalaInt BETWEEN 1 AND 5)
+);
+
+-- Indexes for faster lookups
+CREATE INDEX IX_Escala_Proveedor ON Escala(idProveedor);
+CREATE INDEX IX_Escala_Internal ON Escala(idProveedor, escalaInt);
+CREATE INDEX IX_Escala_External ON Escala(idProveedor, escalaExt);
+
+PRINT 'Escala table created successfully.';
+END
+ELSE
+BEGIN
+    PRINT 'Escala table already exists.';
+END
+GO
+
