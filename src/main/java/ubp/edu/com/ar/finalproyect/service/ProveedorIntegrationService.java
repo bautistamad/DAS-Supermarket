@@ -106,6 +106,43 @@ public class ProveedorIntegrationService {
         }
     }
 
+    /**
+     * Assign order to provider (create order in provider's system)
+     * @param proveedorId Provider ID
+     * @param pedido Order to assign with products
+     * @return Updated Pedido with provider confirmation or null if failed
+     */
+    public Pedido asignarPedidoWithProveedor(Integer proveedorId, Pedido pedido) {
+        logger.info("Attempting to assign order to provider ID: {}", proveedorId);
+
+        Proveedor proveedor = getProveedor(proveedorId);
+
+        try {
+            ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
+            Pedido pedidoAsignado = adapter.asignarPedido(
+                proveedor.getApiEndpoint(),
+                proveedor.getClientId(),
+                proveedor.getApiKey(),
+                pedido
+            );
+
+            if (pedidoAsignado != null) {
+                logger.info("Successfully assigned order to provider {}. Order ID: {}",
+                    proveedorId, pedido.getId());
+            } else {
+                logger.warn("Failed to assign order to provider {}. Provider did not confirm assignment.",
+                    proveedorId);
+            }
+
+            return pedidoAsignado;
+
+        } catch (Exception e) {
+            logger.error("Exception occurred while assigning order to provider {}",
+                proveedorId, e);
+            return null;
+        }
+    }
+
     public Pedido cancelarPedidoWithProveedor(Integer proveedorId, Integer pedidoId) {
         logger.info("Attempting to cancel order {} with provider ID: {}", pedidoId, proveedorId);
 

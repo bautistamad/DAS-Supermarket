@@ -28,9 +28,8 @@ public class PedidoRepositoryImpl implements PedidoRepository {
         SqlParameterSource in = new MapSqlParameterSource()
                 .addValue("estado", pedido.getEstadoId())
                 .addValue("proveedor", pedido.getProveedorId())
-                .addValue("puntuacion", pedido.getPuntuacion())
                 .addValue("fechaEntrega", pedido.getFechaEntrega())
-                .addValue("evaluacion", pedido.getEvaluacionEscala());
+                .addValue("evaluacionEscala", pedido.getEvaluacionEscala());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_create_pedido")

@@ -1,9 +1,5 @@
 package ubp.edu.com.ar.finalproyect.adapter.external.rest.dto;
 
-/**
- * DTO to map the provider's ponderacion response
- * Provider returns: {id: 1, puntuacion: 1, descripcion: "Muy Insatisfecho"}
- */
 public class PonderacionDTO {
     private Integer id;
     private Integer puntuacion;

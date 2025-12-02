@@ -16,10 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Simplified EscalaRepository implementation
- * Only includes essential operations for the rating scale workflow
- */
+
 @Repository
 public class EscalaRepositoryImpl implements EscalaRepository {
 

@@ -19,9 +19,11 @@ public interface ProveedorIntegration {
      */
     List<EscalaDefinicion> getEscala(String apiEndpoint, String clientId, String apiKey);
 
-//    Pedido estimarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido);
-
-//    Pedido asignarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido);
+    /**
+     * Assign order to provider (confirm order creation)
+     * @return Pedido with provider's order ID and confirmation details
+     */
+    Pedido asignarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido);
 
     Pedido consultarEstado(String apiEndpoint, String clientId, String apiKey, Integer idPedido);
 

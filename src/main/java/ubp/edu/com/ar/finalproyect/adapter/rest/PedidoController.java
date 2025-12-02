@@ -72,6 +72,32 @@ public class PedidoController {
         return ResponseEntity.ok(productos);
     }
 
+    // POST /api/pedidos/{id}/asignar - Assign order to external provider
+    @PostMapping("/{id}/asignar")
+    public ResponseEntity<Pedido> asignarPedido(@PathVariable Integer id) {
+        Pedido pedido = pedidoService.getPedido(id);
+
+        if (pedido == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Assign order to provider
+        Pedido pedidoAsignado = integrationService.asignarPedidoWithProveedor(
+            pedido.getProveedorId(),
+            pedido
+        );
+
+        if (pedidoAsignado == null) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+        }
+
+        // Update local order with confirmed status
+        pedidoAsignado.setId(id);
+        Pedido updated = pedidoService.updatePedido(pedidoAsignado);
+
+        return ResponseEntity.ok(updated);
+    }
+
     // POST /api/pedidos/{id}/cancelar - Cancel an order with the external provider
     @PostMapping("/{id}/cancelar")
     public ResponseEntity<Pedido> cancelarPedido(@PathVariable Integer id) {

@@ -38,6 +38,13 @@ public class SoapProveedorAdapter implements ProveedorIntegration {
     }
 
     @Override
+    public Pedido asignarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido) {
+        logger.warn("SOAP adapter stub called for asignarPedido. WSDL: {}, clientId: {}", apiEndpoint, clientId);
+        logger.info("Returning null - SOAP adapter not yet implemented");
+        return null;
+    }
+
+    @Override
     public Pedido consultarEstado(String apiEndpoint, String clientId, String apiKey, Integer idPedido) {
         logger.warn("SOAP adapter stub called for consultarEstado. WSDL: {}, clientId: {}, pedidoId: {}",
             apiEndpoint, clientId, idPedido);

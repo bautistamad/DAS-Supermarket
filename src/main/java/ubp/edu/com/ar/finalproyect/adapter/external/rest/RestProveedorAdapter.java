@@ -3,10 +3,13 @@ package ubp.edu.com.ar.finalproyect.adapter.external.rest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.AsignarPedidoRequest;
+import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.AsignarPedidoResponse;
 import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.CancelacionPedido;
 import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.HealthResponse;
 import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.PonderacionDTO;
 import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.ProductoProveedorDTO;
+import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
 import ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion;
 import ubp.edu.com.ar.finalproyect.domain.HistorialPrecio;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
@@ -17,6 +20,7 @@ import ubp.edu.com.ar.finalproyect.utils.Httpful;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -123,6 +127,68 @@ public class RestProveedorAdapter implements ProveedorIntegration {
         } catch (Exception e) {
             logger.error("Failed to fetch scale from provider endpoint: {}", apiEndpoint, e);
             return new ArrayList<>();
+        }
+    }
+
+    @Override
+    public Pedido asignarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido) {
+        try {
+            logger.info("Assigning order to provider: {} (clientId: {})", apiEndpoint, clientId);
+
+            // Build request with productos from pedido using Maps
+            List<Map<String, Integer>> productosRequest = new ArrayList<>();
+            for (PedidoProducto pp : pedido.getProductos()) {
+                Map<String, Integer> producto = new HashMap<>();
+                producto.put("codigoBarra", pp.getCodigoBarra());
+                producto.put("cantidad", pp.getCantidad());
+                productosRequest.add(producto);
+            }
+
+            AsignarPedidoRequest request = new AsignarPedidoRequest(productosRequest);
+
+            // Send request to provider
+            AsignarPedidoResponse response = new Httpful(apiEndpoint)
+                    .path("/api/proveedor/asignarPedido")
+                    .addQueryParam("clientId", clientId)
+                    .addQueryParam("apikey", apiKey)
+                    .post(request)
+                    .execute(AsignarPedidoResponse.class);
+
+            if (response == null || response.getPedido() == null) {
+                logger.error("Received null response from provider for order assignment");
+                return null;
+            }
+
+            Map<String, Object> providerPedido = response.getPedido();
+            Object idPedidoObj = providerPedido.get("idPedido");
+            logger.info("Order successfully assigned with provider. Provider order ID: {}", idPedidoObj);
+
+            // Update our pedido with provider's response
+            Pedido updatedPedido = new Pedido();
+            updatedPedido.setId(pedido.getId()); // Keep our internal ID
+            updatedPedido.setProveedorId(pedido.getProveedorId());
+            updatedPedido.setEstadoId(2); // Confirmado (estado 2)
+            updatedPedido.setEstadoNombre("Confirmado");
+
+            // Parse fechaEstimada from provider
+            String fechaEstimada = (String) providerPedido.get("fechaEstimada");
+            if (fechaEstimada != null) {
+                try {
+                    updatedPedido.setFechaEstimada(
+                        LocalDateTime.parse(fechaEstimada, DATE_FORMATTER)
+                    );
+                } catch (Exception e) {
+                    logger.warn("Failed to parse fechaEstimada: {}", fechaEstimada);
+                }
+            }
+
+            updatedPedido.setProductos(pedido.getProductos());
+
+            return updatedPedido;
+
+        } catch (Exception e) {
+            logger.error("Failed to assign order with provider endpoint: {}", apiEndpoint, e);
+            return null;
         }
     }
 
