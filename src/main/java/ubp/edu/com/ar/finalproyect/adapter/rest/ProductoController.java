@@ -5,18 +5,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ubp.edu.com.ar.finalproyect.domain.HistorialPrecio;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
+import ubp.edu.com.ar.finalproyect.domain.ProductoProveedor;
+import ubp.edu.com.ar.finalproyect.service.ProductoProveedorService;
 import ubp.edu.com.ar.finalproyect.service.ProductoService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/productos")
 public class ProductoController {
 
     private final ProductoService productoService;
+    private final ProductoProveedorService productoProveedorService;
 
-    public ProductoController(ProductoService productoService) {
+    public ProductoController(ProductoService productoService,
+                             ProductoProveedorService productoProveedorService) {
         this.productoService = productoService;
+        this.productoProveedorService = productoProveedorService;
     }
 
     // POST /api/products - Create a new Producto
@@ -58,6 +64,32 @@ public class ProductoController {
     public ResponseEntity<List<Producto>> getProductsByProvider(@PathVariable Integer id, @RequestParam(defaultValue = "false") Boolean history) {
         List<Producto> productos = productoService.getProductoByProveedor(id, history);
         return ResponseEntity.ok(productos);
+    }
+
+    // POST /api/productos/{barCode}/proveedor/{idProveedor} - Assign product to provider
+    @PostMapping("/{barCode}/proveedor/{idProveedor}")
+    public ResponseEntity<ProductoProveedor> assignProductToProvider(
+            @PathVariable Integer barCode,
+            @PathVariable Integer idProveedor,
+            @RequestBody Map<String, Integer> request) {
+
+        Integer codigoBarraProveedor = request.get("codigoBarraProveedor");
+        Integer estado = request.getOrDefault("estado", 1); // Default: Disponible
+
+        ProductoProveedor assignment = productoProveedorService.assignProductToProvider(
+                barCode, idProveedor, codigoBarraProveedor, estado);
+
+        return ResponseEntity.ok(assignment);
+    }
+
+    // DELETE /api/productos/{barCode}/proveedor/{idProveedor} - Unassign product from provider
+    @DeleteMapping("/{barCode}/proveedor/{idProveedor}")
+    public ResponseEntity<Void> unassignProductFromProvider(
+            @PathVariable Integer barCode,
+            @PathVariable Integer idProveedor) {
+
+        productoProveedorService.unassignProductFromProvider(barCode, idProveedor);
+        return ResponseEntity.noContent().build();
     }
 
 }

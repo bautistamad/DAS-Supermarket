@@ -4,6 +4,7 @@ package ubp.edu.com.ar.finalproyect.adapter.rest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.domain.Proveedor;
 import ubp.edu.com.ar.finalproyect.service.ProveedorIntegrationService;
 import ubp.edu.com.ar.finalproyect.service.ProveedorService;
@@ -56,5 +57,12 @@ public class ProveedorController {
     public ResponseEntity<Map<String, Integer>> syncProductos(@PathVariable Integer id) {
         Map<String, Integer> result = integrationService.syncProductosFromProveedor(id);
         return ResponseEntity.ok(result);
+    }
+
+    // GET /api/proveedores/{id}/productos-disponibles - Get available products from provider
+    @GetMapping("/{id}/productos-disponibles")
+    public ResponseEntity<List<Producto>> getProductosDisponibles(@PathVariable Integer id) {
+        List<Producto> productos = integrationService.getProductosDisponiblesFromProveedor(id);
+        return ResponseEntity.ok(productos);
     }
 }

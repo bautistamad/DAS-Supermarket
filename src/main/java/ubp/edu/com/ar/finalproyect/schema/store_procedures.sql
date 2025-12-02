@@ -392,6 +392,48 @@ END
 go
 
 -- =============================================
+-- Unassign producto from proveedor
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_unassign_product_from_provider
+    @idProveedor INT,
+    @codigoProducto INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate that proveedor exists
+    IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
+        BEGIN
+            RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
+            RETURN;
+        END
+
+    -- Validate that producto exists
+    IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoProducto)
+        BEGIN
+            RAISERROR('Producto with barcode %d does not exist.', 16, 1, @codigoProducto);
+            RETURN;
+        END
+
+    -- Check if relationship exists
+    IF NOT EXISTS (SELECT 1 FROM ProductoProveedor
+                   WHERE idProveedor = @idProveedor
+                     AND codigoBarra = @codigoProducto)
+        BEGIN
+            RAISERROR('Product-Provider relationship does not exist.', 16, 1);
+            RETURN;
+        END
+
+    -- Delete the relationship
+    DELETE FROM ProductoProveedor
+    WHERE idProveedor = @idProveedor
+      AND codigoBarra = @codigoProducto;
+
+    PRINT 'Relationship deleted.';
+END
+go
+
+-- =============================================
 -- Create pedido
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_create_pedido

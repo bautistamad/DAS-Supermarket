@@ -253,6 +253,26 @@ public class ProveedorIntegrationService {
     }
 
     /**
+     * Get available products from provider
+     * Returns list of products available at the provider for selection
+     */
+    public List<Producto> getProductosDisponiblesFromProveedor(Integer proveedorId) {
+        logger.info("Fetching available products from provider ID: {}", proveedorId);
+
+        Proveedor proveedor = getProveedor(proveedorId);
+
+        ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
+        List<Producto> productos = adapter.getProductos(
+                proveedor.getApiEndpoint(),
+                proveedor.getClientId(),
+                proveedor.getApiKey()
+        );
+
+        logger.info("Fetched {} products from provider {}", productos.size(), proveedorId);
+        return productos;
+    }
+
+    /**
      * Fetch rating scale from provider's API
      * Returns list of scale values (e.g., "Excelente", "Bueno", "Regular")
      */
