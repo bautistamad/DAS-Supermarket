@@ -241,6 +241,50 @@ BEGIN
 END
 go
 
+-- =============================================
+-- Update Producto
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_update_product
+    @codigoBarra INT,
+    @nombre NVARCHAR(255),
+    @imagen NVARCHAR(500),
+    @stockMinimo INT,
+    @stockMaximo INT,
+    @stockActual INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate producto exists
+    IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoBarra)
+        BEGIN
+            RAISERROR('Producto with codigoBarra %d does not exist.', 16, 1, @codigoBarra);
+            RETURN;
+        END
+
+    -- Validate stock constraints
+    IF @stockMinimo >= @stockMaximo
+        BEGIN
+            RAISERROR('stockMinimo (%d) must be less than stockMaximo (%d).', 16, 1, @stockMinimo, @stockMaximo);
+            RETURN;
+        END
+
+    -- UPDATE producto
+    UPDATE Producto
+    SET nombre = @nombre,
+        imagen = @imagen,
+        stockMinimo = @stockMinimo,
+        stockMaximo = @stockMaximo,
+        stockActual = @stockActual
+    WHERE codigoBarra = @codigoBarra;
+
+    -- Return the updated producto
+    SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
+    FROM Producto
+    WHERE codigoBarra = @codigoBarra;
+END
+go
+
 
 -- =============================================
 -- Save Proveedor (INSERT or UPDATE)

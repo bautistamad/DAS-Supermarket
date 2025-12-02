@@ -39,6 +39,13 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.getAllProductos());
     }
 
+    // PUT /api/productos/{barCode} - Update an existing product
+    @PutMapping("/{barCode}")
+    public ResponseEntity<Producto> updateProduct(@PathVariable Integer barCode, @RequestBody Producto producto) {
+        Producto updated = productoService.updateProducto(barCode, producto);
+        return ResponseEntity.ok(updated);
+    }
+
     // DELETE /api/products/{barCode}
     @DeleteMapping("/{barCode}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Integer barCode) {

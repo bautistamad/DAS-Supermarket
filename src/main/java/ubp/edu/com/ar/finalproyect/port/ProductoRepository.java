@@ -8,6 +8,8 @@ import java.util.Optional;
 public interface ProductoRepository {
     Producto save(Producto producto);
 
+    Producto update(Producto producto);
+
     Optional<Producto> findByBarCode(Integer barCode);
 
     List<Producto> findAll();

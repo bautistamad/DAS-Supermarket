@@ -52,6 +52,27 @@ public class ProductoService {
         return repository.findAll();
     }
 
+    public Producto updateProducto(Integer barCode, Producto producto) {
+        if (barCode == null) {
+            throw new IllegalArgumentException("BarCode cannot be null");
+        }
+        if (producto == null) {
+            throw new IllegalArgumentException("Producto cannot be null");
+        }
+        if (producto.getNombre() == null || producto.getNombre().trim().isEmpty()) {
+            throw new IllegalArgumentException("Producto name cannot be null or empty");
+        }
+
+        // Verify product exists
+        repository.findByBarCode(barCode)
+            .orElseThrow(() -> new ProductoNotFoundException(barCode));
+
+        // Ensure barCode consistency
+        producto.setCodigoBarra(barCode);
+
+        return repository.update(producto);
+    }
+
     public void deleteProducto(Integer barCode) {
         if (barCode == null) {
             throw new IllegalArgumentException("BarCode cannot be null");

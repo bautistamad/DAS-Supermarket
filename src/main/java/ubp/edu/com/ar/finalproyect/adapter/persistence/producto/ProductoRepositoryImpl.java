@@ -96,6 +96,34 @@ public class ProductoRepositoryImpl implements ProductoRepository {
 
     @Override
     @Transactional
+    public Producto update(Producto producto) {
+        SqlParameterSource in = new MapSqlParameterSource()
+                .addValue("codigoBarra", producto.getCodigoBarra())
+                .addValue("nombre", producto.getNombre())
+                .addValue("imagen", producto.getImage())
+                .addValue("stockMinimo", producto.getMinStock())
+                .addValue("stockMaximo", producto.getMaxStock())
+                .addValue("stockActual", producto.getActualStock());
+
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_update_product")
+                .withSchemaName("dbo")
+                .returningResultSet("products", BeanPropertyRowMapper.newInstance(ProductoEntity.class));
+
+        Map<String, Object> out = jdbcCall.execute(in);
+
+        @SuppressWarnings("unchecked")
+        List<ProductoEntity> result = (List<ProductoEntity>) out.get("products");
+
+        if (result != null && !result.isEmpty()) {
+            return toDomain(result.get(0));
+        }
+
+        return producto;
+    }
+
+    @Override
+    @Transactional
     public void deleteByBarCode(Integer barCode) {
         SqlParameterSource in = new MapSqlParameterSource()
                 .addValue("codigoBarra", barCode);
