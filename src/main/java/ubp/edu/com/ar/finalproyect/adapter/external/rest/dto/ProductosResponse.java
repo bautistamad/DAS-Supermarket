@@ -1,12 +1,12 @@
 package ubp.edu.com.ar.finalproyect.adapter.external.rest.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
 public class ProductosResponse {
 
-    @JsonProperty("productos")
+    @SerializedName("productos")
     private List<ProductoProveedorDTO> productos;
 
     public ProductosResponse() {

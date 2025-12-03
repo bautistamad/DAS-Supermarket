@@ -143,7 +143,6 @@ public class RestProveedorAdapter implements ProveedorIntegration {
                 producto.put("cantidad", pp.getCantidad());
                 productosRequest.add(producto);
             }
-
             AsignarPedidoRequest request = new AsignarPedidoRequest(productosRequest);
 
             // Send request to provider
@@ -175,8 +174,7 @@ public class RestProveedorAdapter implements ProveedorIntegration {
             if (fechaEstimada != null) {
                 try {
                     updatedPedido.setFechaEstimada(
-                        LocalDateTime.parse(fechaEstimada, DATE_FORMATTER)
-                    );
+                            LocalDateTime.parse(fechaEstimada, DATE_FORMATTER));
                 } catch (Exception e) {
                     logger.warn("Failed to parse fechaEstimada: {}", fechaEstimada);
                 }

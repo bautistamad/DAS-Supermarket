@@ -1,16 +1,17 @@
 package ubp.edu.com.ar.finalproyect.adapter.external.rest.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.Map;
 
 /**
  * DTO for receiving order assignment response from provider
- * Provider returns: {"Pedido": {"idPedido": 123, "estadoPedido": "Asignado", "fechaEstimada": "...", "precioTotal": 1500.0}}
+ * Provider returns: {"Pedido": {"idPedido": 123, "estadoPedido": "Asignado",
+ * "fechaEstimada": "...", "precioTotal": 1500.0}}
  */
 public class AsignarPedidoResponse {
 
-    @JsonProperty("Pedido")
+    @SerializedName("Pedido")
     private Map<String, Object> Pedido;
 
     public AsignarPedidoResponse() {

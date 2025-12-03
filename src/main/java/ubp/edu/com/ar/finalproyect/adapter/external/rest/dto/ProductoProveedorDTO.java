@@ -1,16 +1,16 @@
 package ubp.edu.com.ar.finalproyect.adapter.external.rest.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 
 public class ProductoProveedorDTO {
 
-    @JsonProperty("codigoBarra")
+    @SerializedName("codigoBarra")
     private Integer codigoBarra;
 
-    @JsonProperty("nombre")
+    @SerializedName("nombre")
     private String nombre;
 
-    @JsonProperty("precio")
+    @SerializedName("precio")
     private Float precio;
 
     public ProductoProveedorDTO() {
