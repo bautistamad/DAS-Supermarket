@@ -65,4 +65,11 @@ public class ProveedorController {
         List<Producto> productos = integrationService.getProductosDisponiblesFromProveedor(id);
         return ResponseEntity.ok(productos);
     }
+
+    @GetMapping("/{id}/rating")
+    public ResponseEntity<Double> getProveedorRating(@PathVariable Integer id) {
+        Proveedor proveedor = proveedorService.getProveedor(id)
+                .orElseThrow(() -> new RuntimeException("Proveedor not found"));
+        return ResponseEntity.ok(proveedor.getRatingPromedio());
+    }
 }

@@ -118,7 +118,8 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
                 entity.getTipoServicio(),
                 entity.getTipoServicioNombre(),
                 entity.getClientId(),
-                entity.getApiKey()
+                entity.getApiKey(),
+                entity.getRatingPromedio()
         );
     }
 

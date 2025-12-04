@@ -9,6 +9,7 @@ public class Proveedor {
     private String tipoServicioNombre;
     private String clientId;
     private String apiKey;
+    private Double ratingPromedio;
 
     public String getName() {
         return name;
@@ -66,6 +67,14 @@ public class Proveedor {
         this.clientId = clientId;
     }
 
+    public Double getRatingPromedio() {
+        return ratingPromedio;
+    }
+
+    public void setRatingPromedio(Double ratingPromedio) {
+        this.ratingPromedio = ratingPromedio;
+    }
+
     public Proveedor() {
     }
 
@@ -77,5 +86,16 @@ public class Proveedor {
         this.tipoServicioNombre = tipoServicioNombre;
         this.clientId = clientId;
         this.apiKey = apiKey;
+    }
+
+    public Proveedor(Integer id, String name, String apiEndpoint, Integer tipoServicio, String tipoServicioNombre, String clientId, String apiKey, Double ratingPromedio) {
+        this.id = id;
+        this.name = name;
+        this.apiEndpoint = apiEndpoint;
+        this.tipoServicio = tipoServicio;
+        this.tipoServicioNombre = tipoServicioNombre;
+        this.clientId = clientId;
+        this.apiKey = apiKey;
+        this.ratingPromedio = ratingPromedio;
     }
 }

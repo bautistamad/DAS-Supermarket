@@ -3,6 +3,7 @@ package ubp.edu.com.ar.finalproyect.port;
 import ubp.edu.com.ar.finalproyect.domain.Proveedor;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ProveedorRepository {

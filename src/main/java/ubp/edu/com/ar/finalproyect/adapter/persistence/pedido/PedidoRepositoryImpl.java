@@ -139,8 +139,14 @@ public class PedidoRepositoryImpl implements PedidoRepository {
         List<PedidoEntity> result = (List<PedidoEntity>) out.get("pedidos");
 
         if (result != null) {
+            // Group by pedido ID to avoid duplicates
+            // The SP returns multiple rows per pedido (one per product)
             return result.stream()
-                    .map(this::toDomain)
+                    .map(PedidoEntity::getId)
+                    .distinct()
+                    .map(this::findById)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
                     .toList();
         }
 
@@ -177,8 +183,14 @@ public class PedidoRepositoryImpl implements PedidoRepository {
         List<PedidoEntity> result = (List<PedidoEntity>) out.get("pedidos");
 
         if (result != null) {
+            // Group by pedido ID to avoid duplicates
+            // The SP returns multiple rows per pedido (one per product)
             return result.stream()
-                    .map(this::toDomain)
+                    .map(PedidoEntity::getId)
+                    .distinct()
+                    .map(this::findById)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
                     .toList();
         }
 

@@ -9,6 +9,45 @@ END
 GO
 
 -- =============================================
+-- Add ratingPromedio column to Proveedor table
+-- =============================================
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Proveedor') AND name = 'ratingPromedio')
+BEGIN
+    ALTER TABLE Proveedor ADD ratingPromedio DECIMAL(3,2) NULL;
+    PRINT 'Column ratingPromedio added to Proveedor table successfully.';
+END
+GO
+
+-- =============================================
+-- Trigger to update provider rating when order is evaluated
+-- =============================================
+CREATE OR ALTER TRIGGER trg_update_proveedor_rating
+ON Pedido
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Only process if evaluacionEscala was updated
+    IF UPDATE(evaluacionEscala)
+    BEGIN
+        -- Update rating for affected providers
+        UPDATE Proveedor
+        SET ratingPromedio = (
+            SELECT CAST(AVG(CAST(e.escalaInt AS DECIMAL(5,2))) AS DECIMAL(3,2))
+            FROM Pedido p
+            INNER JOIN Escala e ON p.evaluacionEscala = e.idEscala
+            WHERE p.proveedor = Proveedor.id
+              AND p.estado = 5  -- Only delivered orders
+              AND p.evaluacionEscala IS NOT NULL
+              AND e.escalaInt IS NOT NULL
+        )
+        WHERE id IN (SELECT DISTINCT proveedor FROM inserted);
+    END
+END
+GO
+
+-- =============================================
 -- Get price history by product
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_get_precio_history_by_product
@@ -106,7 +145,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey, p.ratingPromedio
     FROM Proveedor p
     LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
     ORDER BY p.nombre;
@@ -166,7 +205,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey, p.ratingPromedio
     FROM Proveedor p
     LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
     WHERE p.id = @id;
@@ -332,7 +371,7 @@ BEGIN
         END
 
     -- Return the saved proveedor
-    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey, p.ratingPromedio
     FROM Proveedor p
     LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
     WHERE p.id = @id;
@@ -1019,38 +1058,5 @@ BEGIN
              LEFT JOIN EstadoPedido ep ON p.estado = ep.id
              LEFT JOIN Proveedor pr ON p.proveedor = pr.id
     WHERE p.id = @idPedido;
-END
-GO
-
--- =============================================
--- Get average rating for a provider
--- =============================================
-CREATE OR ALTER PROCEDURE sp_get_proveedor_rating
-    @idProveedor INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    -- Validate provider exists
-    IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
-        BEGIN
-            RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
-            RETURN;
-        END
-
-    -- Calculate average rating using internal scale (1-5)
-    -- Only consider delivered orders (estado = 5) that have been rated
-    SELECT
-        @idProveedor AS idProveedor,
-        COUNT(p.id) AS totalPedidosEvaluados,
-        CAST(AVG(CAST(e.escalaInt AS DECIMAL(5,2))) AS DECIMAL(5,2)) AS ratingPromedio,
-        MIN(e.escalaInt) AS ratingMinimo,
-        MAX(e.escalaInt) AS ratingMaximo
-    FROM Pedido p
-    INNER JOIN Escala e ON p.evaluacionEscala = e.idEscala
-    WHERE p.proveedor = @idProveedor
-      AND p.estado = 5  -- Only delivered orders
-      AND p.evaluacionEscala IS NOT NULL  -- Only rated orders
-      AND e.escalaInt IS NOT NULL;  -- Only mapped scales
 END
 GO

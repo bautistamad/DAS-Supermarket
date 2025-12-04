@@ -10,6 +10,7 @@ public class ProveedorEntity {
     private String tipoServicioNombre;
     private String clientId;
     private String apiKey;
+    private Double ratingPromedio;
 
     public ProveedorEntity() {
     }
@@ -78,6 +79,14 @@ public class ProveedorEntity {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    public Double getRatingPromedio() {
+        return ratingPromedio;
+    }
+
+    public void setRatingPromedio(Double ratingPromedio) {
+        this.ratingPromedio = ratingPromedio;
     }
 }
 

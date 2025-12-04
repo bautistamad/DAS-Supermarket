@@ -287,7 +287,7 @@ public class RestProveedorAdapter implements ProveedorIntegration {
             // Provider expects GET /api/proveedor/puntuarPedido?clientId={}&apikey={}&idPedido={}&puntuacion={}
             Map<String, Object> response = new Httpful(apiEndpoint)
                     .path("/api/proveedor/puntuarPedido")
-                    .addQueryParam("clientId", clientId)D
+                    .addQueryParam("clientId", clientId)
                     .addQueryParam("apikey", apiKey)
                     .addQueryParam("idPedido", pedidoId.toString())
                     .addQueryParam("puntuacion", puntuacion.toString())
