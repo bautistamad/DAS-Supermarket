@@ -12,6 +12,7 @@ import ubp.edu.com.ar.finalproyect.domain.Pedido;
 import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
 import ubp.edu.com.ar.finalproyect.port.PedidoRepository;
 
+import java.sql.Types;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,8 +29,9 @@ public class PedidoRepositoryImpl implements PedidoRepository {
         SqlParameterSource in = new MapSqlParameterSource()
                 .addValue("estado", pedido.getEstadoId())
                 .addValue("proveedor", pedido.getProveedorId())
-                .addValue("fechaEntrega", pedido.getFechaEntrega())
-                .addValue("evaluacionEscala", pedido.getEvaluacionEscala());
+                .addValue("fechaEstimada", pedido.getFechaEstimada())
+                .addValue("fechaEntrega", pedido.getFechaEntrega(), Types.TIMESTAMP)
+                .addValue("evaluacionEscala", pedido.getEvaluacionEscala(), Types.SMALLINT);
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_create_pedido")
@@ -42,10 +44,35 @@ public class PedidoRepositoryImpl implements PedidoRepository {
         List<PedidoEntity> result = (List<PedidoEntity>) out.get("pedidos");
 
         if (result != null && !result.isEmpty()) {
-            return toDomain(result.get(0));
+            Pedido savedPedido = toDomain(result.get(0));
+
+            // Add products to the order
+            if (pedido.getProductos() != null && !pedido.getProductos().isEmpty()) {
+                for (PedidoProducto producto : pedido.getProductos()) {
+                    addProductToPedido(savedPedido.getId(), producto.getCodigoBarra(), producto.getCantidad());
+                }
+
+                // Reload pedido with products
+                return findById(savedPedido.getId()).orElse(savedPedido);
+            }
+
+            return savedPedido;
         }
 
         return pedido;
+    }
+
+    private void addProductToPedido(Integer idPedido, Integer codigoBarra, Integer cantidad) {
+        SqlParameterSource in = new MapSqlParameterSource()
+                .addValue("idPedido", idPedido)
+                .addValue("codigoBarra", codigoBarra)
+                .addValue("cantidad", cantidad);
+
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_add_product_to_pedido")
+                .withSchemaName("dbo");
+
+        jdbcCall.execute(in);
     }
 
     @Override
@@ -54,9 +81,8 @@ public class PedidoRepositoryImpl implements PedidoRepository {
         SqlParameterSource in = new MapSqlParameterSource()
                 .addValue("id", pedido.getId())
                 .addValue("estado", pedido.getEstadoId())
-                .addValue("puntuacion", pedido.getPuntuacion())
                 .addValue("fechaEntrega", pedido.getFechaEntrega())
-                .addValue("evaluacion", pedido.getEvaluacionEscala());
+                .addValue("evaluacionEscala", pedido.getEvaluacionEscala());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_update_pedido")

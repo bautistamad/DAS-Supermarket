@@ -303,6 +303,44 @@ public class ProveedorIntegrationService {
         }
     }
 
+    /**
+     * Send order evaluation to provider
+     * @param proveedorId Provider ID
+     * @param pedidoId Order ID
+     * @param puntuacion Rating value in provider's scale
+     * @return true if evaluation was sent successfully, false otherwise
+     */
+    public boolean enviarEvaluacionToProveedor(Integer proveedorId, Integer pedidoId, Integer puntuacion) {
+        logger.info("Sending evaluation for order {} to provider ID: {} with rating: {}",
+                pedidoId, proveedorId, puntuacion);
+
+        Proveedor proveedor = getProveedor(proveedorId);
+
+        try {
+            ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
+            boolean success = adapter.enviarEvaluacion(
+                    proveedor.getApiEndpoint(),
+                    proveedor.getClientId(),
+                    proveedor.getApiKey(),
+                    pedidoId,
+                    puntuacion
+            );
+
+            if (success) {
+                logger.info("Successfully sent evaluation for order {} to provider {}", pedidoId, proveedorId);
+            } else {
+                logger.warn("Failed to send evaluation for order {} to provider {}", pedidoId, proveedorId);
+            }
+
+            return success;
+
+        } catch (Exception e) {
+            logger.error("Exception occurred while sending evaluation for order {} to provider {}",
+                    pedidoId, proveedorId, e);
+            return false;
+        }
+    }
+
 
     private Proveedor getProveedor(Integer proveedorId) {
         return proveedorRepository.findById(proveedorId)

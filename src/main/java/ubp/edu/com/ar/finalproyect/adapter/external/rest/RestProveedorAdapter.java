@@ -258,4 +258,35 @@ public class RestProveedorAdapter implements ProveedorIntegration {
         }
     }
 
+    @Override
+    public boolean enviarEvaluacion(String apiEndpoint, String clientId, String apiKey,
+                                   Integer pedidoId, Integer puntuacion) {
+        try {
+            logger.info("Sending evaluation for order {} to provider: {} (clientId: {}) with rating: {}",
+                    pedidoId, apiEndpoint, clientId, puntuacion);
+
+            // Provider expects GET /api/proveedor/puntuarPedido?clientId={}&apikey={}&idPedido={}&puntuacion={}
+            Map<String, Object> response = new Httpful(apiEndpoint)
+                    .path("/api/proveedor/puntuarPedido")
+                    .addQueryParam("clientId", clientId)
+                    .addQueryParam("apikey", apiKey)
+                    .addQueryParam("idPedido", pedidoId.toString())
+                    .addQueryParam("puntuacion", puntuacion.toString())
+                    .get()
+                    .execute(Map.class);
+
+            if (response == null) {
+                logger.error("Received null response from provider for evaluation: order {}", pedidoId);
+                return false;
+            }
+
+            logger.info("Evaluation successfully sent for order {}. Provider response: {}", pedidoId, response);
+            return true;
+
+        } catch (Exception e) {
+            logger.error("Failed to send evaluation for order {} to provider endpoint: {}", pedidoId, apiEndpoint, e);
+            return false;
+        }
+    }
+
 }

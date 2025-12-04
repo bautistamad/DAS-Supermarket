@@ -9,6 +9,7 @@ import ubp.edu.com.ar.finalproyect.service.PedidoService;
 import ubp.edu.com.ar.finalproyect.service.ProveedorIntegrationService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -103,5 +104,28 @@ public class PedidoController {
     public ResponseEntity<Pedido> cancelarPedido(@PathVariable Integer id) {
         Pedido pedidoCancelado = pedidoService.cancelarPedido(id);
         return ResponseEntity.ok(pedidoCancelado);
+    }
+
+    // POST /api/pedidos/{id}/rate - Rate a delivered order
+    @PostMapping("/{id}/rate")
+    public ResponseEntity<Pedido> ratePedido(
+            @PathVariable Integer id,
+            @RequestBody Map<String, Integer> request) {
+
+        Integer rating = request.get("rating");
+
+        if (rating == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Pedido pedidoRated = pedidoService.ratePedido(id, rating);
+        return ResponseEntity.ok(pedidoRated);
+    }
+
+    // GET /api/pedidos/{id}/status - Query order status from provider
+    @GetMapping("/{id}/status")
+    public ResponseEntity<Pedido> getOrderStatus(@PathVariable Integer id) {
+        Pedido pedido = pedidoService.consultarEstadoPedido(id);
+        return ResponseEntity.ok(pedido);
     }
 }

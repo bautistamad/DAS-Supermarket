@@ -439,6 +439,7 @@ go
 CREATE OR ALTER PROCEDURE sp_create_pedido
     @estado SMALLINT,
     @proveedor SMALLINT,
+    @fechaEstimada DATETIME = NULL,
     @fechaEntrega DATETIME = NULL,
     @evaluacionEscala SMALLINT = NULL
 AS
@@ -461,8 +462,8 @@ BEGIN
 
     DECLARE @newId INT; -- Cambiado de SMALLINT a INT para coincidir con Pedido.id (IDENTITY)
 
-    INSERT INTO Pedido (estado, proveedor, fechaEntrega, evaluacionEscala)
-    VALUES (@estado, @proveedor, @fechaEntrega, @evaluacionEscala);
+    INSERT INTO Pedido (estado, proveedor, fechaEstimada, fechaEntrega, evaluacionEscala)
+    VALUES (@estado, @proveedor, @fechaEstimada, @fechaEntrega, @evaluacionEscala);
 
     SET @newId = SCOPE_IDENTITY();
 
@@ -785,6 +786,67 @@ BEGIN
              INNER JOIN Producto p ON pp.codigoBarra = p.codigoBarra
     WHERE pp.idPedido = @idPedido
     ORDER BY p.nombre;
+END
+GO
+
+
+-- =============================================
+-- Add product to pedido
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_add_product_to_pedido
+    @idPedido INT,
+    @codigoBarra INT,
+    @cantidad INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate pedido exists
+    IF NOT EXISTS (SELECT 1 FROM Pedido WHERE id = @idPedido)
+        BEGIN
+            RAISERROR('Pedido with id %d does not exist.', 16, 1, @idPedido);
+            RETURN;
+        END
+
+    -- Validate producto exists
+    IF NOT EXISTS (SELECT 1 FROM Producto WHERE codigoBarra = @codigoBarra)
+        BEGIN
+            RAISERROR('Producto with codigoBarra %d does not exist.', 16, 1, @codigoBarra);
+            RETURN;
+        END
+
+    -- Validate cantidad
+    IF @cantidad <= 0
+        BEGIN
+            RAISERROR('Cantidad must be greater than 0, got: %d', 16, 1, @cantidad);
+            RETURN;
+        END
+
+    -- Check if product already exists in pedido
+    IF EXISTS (SELECT 1 FROM PedidoProducto WHERE idPedido = @idPedido AND codigoBarra = @codigoBarra)
+        BEGIN
+            -- Update cantidad
+            UPDATE PedidoProducto
+            SET cantidad = @cantidad
+            WHERE idPedido = @idPedido AND codigoBarra = @codigoBarra;
+        END
+    ELSE
+        BEGIN
+            -- Insert new product
+            INSERT INTO PedidoProducto (idPedido, codigoBarra, cantidad)
+            VALUES (@idPedido, @codigoBarra, @cantidad);
+        END
+
+    -- Return the product
+    SELECT
+        pp.idPedido,
+        pp.codigoBarra,
+        pp.cantidad,
+        p.nombre AS productoNombre,
+        p.imagen AS productoImagen
+    FROM PedidoProducto pp
+             INNER JOIN Producto p ON pp.codigoBarra = p.codigoBarra
+    WHERE pp.idPedido = @idPedido AND pp.codigoBarra = @codigoBarra;
 END
 GO
 

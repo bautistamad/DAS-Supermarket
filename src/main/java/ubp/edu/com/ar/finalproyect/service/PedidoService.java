@@ -4,10 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ubp.edu.com.ar.finalproyect.domain.Escala;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
 import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
 import ubp.edu.com.ar.finalproyect.domain.Proveedor;
+import ubp.edu.com.ar.finalproyect.exception.EscalaNotFoundException;
 import ubp.edu.com.ar.finalproyect.exception.PedidoNotFoundException;
+import ubp.edu.com.ar.finalproyect.port.EscalaRepository;
 import ubp.edu.com.ar.finalproyect.port.PedidoRepository;
 import ubp.edu.com.ar.finalproyect.port.ProveedorRepository;
 
@@ -24,14 +27,17 @@ public class PedidoService {
     private final ProveedorRepository proveedorRepository;
     private final ProveedorIntegrationService integrationService;
     private final EscalaService escalaService;
+    private final EscalaRepository escalaRepository;
 
     public PedidoService(PedidoRepository repository, ProveedorRepository proveedorRepository,
                          ProveedorIntegrationService integrationService,
-                         EscalaService escalaService) {
+                         EscalaService escalaService,
+                         EscalaRepository escalaRepository) {
         this.repository = repository;
         this.proveedorRepository = proveedorRepository;
         this.integrationService = integrationService;
         this.escalaService = escalaService;
+        this.escalaRepository = escalaRepository;
     }
 
     @Transactional
@@ -52,9 +58,8 @@ public class PedidoService {
 
         logger.info("Creating order with provider {}", pedido.getProveedorId());
 
-
-        // Step 2: Save order in our database (estado: Pendiente = 1)
-        logger.info("Step 2: Saving order in local database");
+        // Step 1: Save order in our database (estado: Pendiente = 1)
+        logger.info("Step 1: Saving order in local database");
         Pedido pedidoGuardado = repository.save(pedido);
 
         if (pedidoGuardado.getId() == null) {
@@ -64,18 +69,32 @@ public class PedidoService {
 
         logger.info("Order saved locally with ID: {}", pedidoGuardado.getId());
 
-        // Step 3: Assign order with provider (confirm order)
-        logger.info("Step 3: Assigning order {} with provider {}",
+        // Step 2: Assign order with provider (confirm order with external system)
+        logger.info("Step 2: Assigning order {} with provider {}",
                 pedidoGuardado.getId(), pedido.getProveedorId());
+
+        Pedido pedidoAsignado = integrationService.asignarPedidoWithProveedor(
+                pedido.getProveedorId(),
+                pedidoGuardado
+        );
+
+        if (pedidoAsignado == null) {
+            logger.error("Failed to assign order {} with provider {}. Rolling back to Pendiente state.",
+                    pedidoGuardado.getId(), pedido.getProveedorId());
+            // Keep order in Pendiente state - can retry assignment later with POST /pedidos/{id}/asignar
+            return pedidoGuardado;
+        }
 
         logger.info("Order {} successfully assigned with provider {}",
                 pedidoGuardado.getId(), pedido.getProveedorId());
 
-        // Step 4: Update order with confirmation from provider (estado: Confirmado = 2)
-        logger.info("Step 4: Updating order {} status to Confirmado", pedidoGuardado.getId());
-        pedidoGuardado.setEstadoId(2); // Confirmado
+        // Step 3: Update order with confirmation from provider (estado: Confirmado = 2)
+        logger.info("Step 3: Updating order {} status to Confirmado", pedidoGuardado.getId());
+        pedidoAsignado.setId(pedidoGuardado.getId()); // Preserve our internal ID
+        pedidoAsignado.setProveedorId(pedido.getProveedorId()); // Preserve proveedor
+        pedidoAsignado.setProductos(pedidoGuardado.getProductos()); // Preserve products
 
-        Pedido pedidoFinal = repository.update(pedidoGuardado);
+        Pedido pedidoFinal = repository.update(pedidoAsignado);
 
         logger.info("Order {} created and confirmed successfully with provider {}",
                 pedidoFinal.getId(), pedido.getProveedorId());
@@ -268,6 +287,67 @@ public class PedidoService {
         Pedido updated = repository.update(pedido);
 
         logger.info("Successfully cancelled order {} and updated local status", pedidoId);
+        return updated;
+    }
+    
+    @Transactional
+    public Pedido ratePedido(Integer pedidoId, Integer rating) {
+        if (pedidoId == null) {
+            throw new IllegalArgumentException("Pedido id cannot be null");
+        }
+        if (rating == null) {
+            throw new IllegalArgumentException("Rating cannot be null");
+        }
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5, got: " + rating);
+        }
+
+        logger.info("Rating order {} with internal scale: {}", pedidoId, rating);
+
+        // Get the existing order
+        Pedido pedido = repository.findById(pedidoId)
+                .orElseThrow(() -> new PedidoNotFoundException(pedidoId));
+
+        // Validate order is delivered (estado = 5)
+        if (pedido.getEstadoId() != 5) {
+            throw new IllegalStateException(
+                    "Cannot rate order " + pedidoId + " - order must be delivered. Current status: " +
+                    pedido.getEstadoNombre()
+            );
+        }
+
+        // Find the escala mapping for this provider and internal rating
+        Escala escala = escalaRepository.findByInternal(pedido.getProveedorId(), rating)
+                .orElseThrow(() -> new EscalaNotFoundException(
+                        "No scale mapping found for provider " + pedido.getProveedorId() +
+                        " and internal rating " + rating + ". Please configure scale mappings first."
+                ));
+
+        logger.info("Converting internal rating {} to external scale {} (idEscala: {})",
+                rating, escala.getEscalaExt(), escala.getIdEscala());
+
+        // Update pedido evaluation with the scale mapping
+        escalaRepository.updatePedidoEvaluacion(pedidoId, escala.getIdEscala());
+
+        // Send evaluation to provider with external scale value
+        Integer externalRating = Integer.parseInt(escala.getEscalaExt());
+        boolean evaluacionEnviada = integrationService.enviarEvaluacionToProveedor(
+                pedido.getProveedorId(),
+                pedidoId,
+                externalRating
+        );
+
+        if (evaluacionEnviada) {
+            logger.info("Evaluation successfully sent to provider for order {}", pedidoId);
+        } else {
+            logger.warn("Failed to send evaluation to provider for order {}. Evaluation saved locally.", pedidoId);
+        }
+
+        // Fetch and return the updated order
+        Pedido updated = repository.findById(pedidoId)
+                .orElseThrow(() -> new PedidoNotFoundException(pedidoId));
+
+        logger.info("Successfully rated order {} with scale {}", pedidoId, escala.getDescripcionExt());
         return updated;
     }
 }

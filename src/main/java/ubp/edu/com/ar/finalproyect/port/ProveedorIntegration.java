@@ -29,6 +29,15 @@ public interface ProveedorIntegration {
 
     Pedido cancelarPedido(String apiEndpoint, String clientId, String apiKey, Integer idPedido);
 
-//    boolean enviarEvaluacion(String apiEndpoint, String clientId, String apiKey,
-//                            Integer pedidoId, Integer puntuacion);
+    /**
+     * Send order evaluation to provider
+     * @param apiEndpoint Provider's API endpoint
+     * @param clientId Client authentication ID
+     * @param apiKey Client API key
+     * @param pedidoId Order ID to rate
+     * @param puntuacion Rating value (in provider's scale)
+     * @return true if evaluation was successfully sent, false otherwise
+     */
+    boolean enviarEvaluacion(String apiEndpoint, String clientId, String apiKey,
+                            Integer pedidoId, Integer puntuacion);
 }
