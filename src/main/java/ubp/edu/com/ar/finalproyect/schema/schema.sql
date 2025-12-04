@@ -66,6 +66,7 @@ CREATE TABLE Pedido (
                         id INT PRIMARY KEY IDENTITY(1,1),
                         estado INT NOT NULL,
                         proveedor INT NOT NULL,
+                        idPedidoProveedor INT NULL,  -- ID del pedido en el sistema del proveedor
                         fechaEstimada DATETIME NOT NULL DEFAULT GETDATE(),
                         fechaEntrega DATETIME NULL,
                         fechaRegistro DATETIME NOT NULL DEFAULT GETDATE(),

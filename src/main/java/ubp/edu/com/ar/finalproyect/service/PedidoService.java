@@ -94,7 +94,14 @@ public class PedidoService {
         pedidoAsignado.setProveedorId(pedido.getProveedorId()); // Preserve proveedor
         pedidoAsignado.setProductos(pedidoGuardado.getProductos()); // Preserve products
 
+        logger.info("About to update order {} with: estado={}, idPedidoProveedor={}, fechaEstimada={}",
+                pedidoAsignado.getId(), pedidoAsignado.getEstadoId(),
+                pedidoAsignado.getIdPedidoProveedor(), pedidoAsignado.getFechaEstimada());
+
         Pedido pedidoFinal = repository.update(pedidoAsignado);
+
+        logger.info("Order {} updated successfully. idPedidoProveedor saved: {}",
+                pedidoFinal.getId(), pedidoFinal.getIdPedidoProveedor());
 
         logger.info("Order {} created and confirmed successfully with provider {}",
                 pedidoFinal.getId(), pedido.getProveedorId());
@@ -330,17 +337,24 @@ public class PedidoService {
         escalaRepository.updatePedidoEvaluacion(pedidoId, escala.getIdEscala());
 
         // Send evaluation to provider with external scale value
-        Integer externalRating = Integer.parseInt(escala.getEscalaExt());
-        boolean evaluacionEnviada = integrationService.enviarEvaluacionToProveedor(
-                pedido.getProveedorId(),
-                pedidoId,
-                externalRating
-        );
+        // IMPORTANT: Use provider's order ID, not our internal ID
+        if (pedido.getIdPedidoProveedor() != null) {
+            Integer externalRating = Integer.parseInt(escala.getEscalaExt());
+            boolean evaluacionEnviada = integrationService.enviarEvaluacionToProveedor(
+                    pedido.getProveedorId(),
+                    pedido.getIdPedidoProveedor(),  // Use provider's order ID
+                    externalRating
+            );
 
-        if (evaluacionEnviada) {
-            logger.info("Evaluation successfully sent to provider for order {}", pedidoId);
+            if (evaluacionEnviada) {
+                logger.info("Evaluation successfully sent to provider for order {} (provider order ID: {})",
+                        pedidoId, pedido.getIdPedidoProveedor());
+            } else {
+                logger.warn("Failed to send evaluation to provider for order {} (provider order ID: {}). Evaluation saved locally.",
+                        pedidoId, pedido.getIdPedidoProveedor());
+            }
         } else {
-            logger.warn("Failed to send evaluation to provider for order {}. Evaluation saved locally.", pedidoId);
+            logger.warn("Cannot send evaluation to provider: idPedidoProveedor is null for order {}. Evaluation saved locally only.", pedidoId);
         }
 
         // Fetch and return the updated order

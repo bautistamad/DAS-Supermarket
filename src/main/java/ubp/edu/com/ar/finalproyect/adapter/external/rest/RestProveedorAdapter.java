@@ -162,10 +162,29 @@ public class RestProveedorAdapter implements ProveedorIntegration {
             Object idPedidoObj = providerPedido.get("idPedido");
             logger.info("Order successfully assigned with provider. Provider order ID: {}", idPedidoObj);
 
-            // Update our pedido with provider's response
+            // Update our pedido with provider's respons e
             Pedido updatedPedido = new Pedido();
             updatedPedido.setId(pedido.getId()); // Keep our internal ID
             updatedPedido.setProveedorId(pedido.getProveedorId());
+
+            // Save provider's order ID
+            if (idPedidoObj != null) {
+                Integer idPedidoProveedor;
+                if (idPedidoObj instanceof Integer) {
+                    idPedidoProveedor = (Integer) idPedidoObj;
+                } else if (idPedidoObj instanceof Double) {
+                    idPedidoProveedor = ((Double) idPedidoObj).intValue();
+                } else if (idPedidoObj instanceof Number) {
+                    idPedidoProveedor = ((Number) idPedidoObj).intValue();
+                } else {
+                    // Handle string representations like "34.0" or "34"
+                    String strValue = idPedidoObj.toString();
+                    idPedidoProveedor = Double.valueOf(strValue).intValue();
+                }
+                updatedPedido.setIdPedidoProveedor(idPedidoProveedor);
+                logger.info("Saved provider order ID: {}", idPedidoProveedor);
+            }
+
             updatedPedido.setEstadoId(2); // Confirmado (estado 2)
             updatedPedido.setEstadoNombre("Confirmado");
 
@@ -268,7 +287,7 @@ public class RestProveedorAdapter implements ProveedorIntegration {
             // Provider expects GET /api/proveedor/puntuarPedido?clientId={}&apikey={}&idPedido={}&puntuacion={}
             Map<String, Object> response = new Httpful(apiEndpoint)
                     .path("/api/proveedor/puntuarPedido")
-                    .addQueryParam("clientId", clientId)
+                    .addQueryParam("clientId", clientId)D
                     .addQueryParam("apikey", apiKey)
                     .addQueryParam("idPedido", pedidoId.toString())
                     .addQueryParam("puntuacion", puntuacion.toString())

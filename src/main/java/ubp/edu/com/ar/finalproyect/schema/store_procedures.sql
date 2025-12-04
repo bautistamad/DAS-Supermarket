@@ -1,4 +1,14 @@
 -- =============================================
+-- Add idPedidoProveedor column if it doesn't exist
+-- =============================================
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Pedido') AND name = 'idPedidoProveedor')
+BEGIN
+    ALTER TABLE Pedido ADD idPedidoProveedor INT NULL;
+    PRINT 'Column idPedidoProveedor added to Pedido table successfully.';
+END
+GO
+
+-- =============================================
 -- Get price history by product
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_get_precio_history_by_product
@@ -503,6 +513,7 @@ BEGIN
         ep.descripcion AS estadoDescripcion,
         p.proveedor,
         pr.nombre AS proveedorNombre,
+        p.idPedidoProveedor,
         p.fechaEstimada,
         p.fechaEntrega,
         p.fechaRegistro,
@@ -537,6 +548,7 @@ BEGIN
         ep.descripcion AS estadoDescripcion,
         p.proveedor,
         pr.nombre AS proveedorNombre,
+        p.idPedidoProveedor,
         p.fechaEstimada,
         p.fechaEntrega,
         p.fechaRegistro,
@@ -562,6 +574,7 @@ GO
 CREATE OR ALTER PROCEDURE sp_update_pedido
     @id INT, -- Cambiado de SMALLINT a INT
     @estado INT, -- Cambiado de SMALLINT a INT
+    @idPedidoProveedor INT = NULL,
     @fechaEntrega DATETIME = NULL,
     @evaluacionEscala SMALLINT = NULL
 AS
@@ -584,6 +597,10 @@ BEGIN
 
     UPDATE Pedido
     SET estado = @estado,
+        idPedidoProveedor = CASE
+            WHEN @idPedidoProveedor IS NOT NULL THEN @idPedidoProveedor
+            ELSE idPedidoProveedor
+        END,
         fechaEntrega = @fechaEntrega,
         evaluacionEscala = @evaluacionEscala
     WHERE id = @id;
@@ -596,6 +613,7 @@ BEGIN
         ep.descripcion AS estadoDescripcion,
         p.proveedor,
         pr.nombre AS proveedorNombre,
+        p.idPedidoProveedor,
         p.fechaEstimada,
         p.fechaEntrega,
         p.fechaRegistro,
@@ -1001,5 +1019,38 @@ BEGIN
              LEFT JOIN EstadoPedido ep ON p.estado = ep.id
              LEFT JOIN Proveedor pr ON p.proveedor = pr.id
     WHERE p.id = @idPedido;
+END
+GO
+
+-- =============================================
+-- Get average rating for a provider
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_get_proveedor_rating
+    @idProveedor INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate provider exists
+    IF NOT EXISTS (SELECT 1 FROM Proveedor WHERE id = @idProveedor)
+        BEGIN
+            RAISERROR('Proveedor with id %d does not exist.', 16, 1, @idProveedor);
+            RETURN;
+        END
+
+    -- Calculate average rating using internal scale (1-5)
+    -- Only consider delivered orders (estado = 5) that have been rated
+    SELECT
+        @idProveedor AS idProveedor,
+        COUNT(p.id) AS totalPedidosEvaluados,
+        CAST(AVG(CAST(e.escalaInt AS DECIMAL(5,2))) AS DECIMAL(5,2)) AS ratingPromedio,
+        MIN(e.escalaInt) AS ratingMinimo,
+        MAX(e.escalaInt) AS ratingMaximo
+    FROM Pedido p
+    INNER JOIN Escala e ON p.evaluacionEscala = e.idEscala
+    WHERE p.proveedor = @idProveedor
+      AND p.estado = 5  -- Only delivered orders
+      AND p.evaluacionEscala IS NOT NULL  -- Only rated orders
+      AND e.escalaInt IS NOT NULL;  -- Only mapped scales
 END
 GO

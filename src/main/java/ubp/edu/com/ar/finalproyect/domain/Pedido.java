@@ -9,6 +9,7 @@ public class Pedido {
     private Integer id;
     private Integer estadoId;
     private Integer proveedorId;
+    private Integer idPedidoProveedor;  // ID del pedido en el sistema del proveedor
     private Integer puntuacion;
     private LocalDateTime fechaEstimada;
     private LocalDateTime fechaEntrega;
@@ -61,6 +62,14 @@ public class Pedido {
 
     public void setProveedorId(Integer proveedorId) {
         this.proveedorId = proveedorId;
+    }
+
+    public Integer getIdPedidoProveedor() {
+        return idPedidoProveedor;
+    }
+
+    public void setIdPedidoProveedor(Integer idPedidoProveedor) {
+        this.idPedidoProveedor = idPedidoProveedor;
     }
 
     public Integer getPuntuacion() {

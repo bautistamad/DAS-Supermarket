@@ -81,6 +81,7 @@ public class PedidoRepositoryImpl implements PedidoRepository {
         SqlParameterSource in = new MapSqlParameterSource()
                 .addValue("id", pedido.getId())
                 .addValue("estado", pedido.getEstadoId())
+                .addValue("idPedidoProveedor", pedido.getIdPedidoProveedor())
                 .addValue("fechaEntrega", pedido.getFechaEntrega())
                 .addValue("evaluacionEscala", pedido.getEvaluacionEscala());
 
@@ -215,6 +216,8 @@ public class PedidoRepositoryImpl implements PedidoRepository {
                 entity.getEvaluacionEscala(),
                 entity.getFechaRegistro()
         );
+
+        pedido.setIdPedidoProveedor(entity.getIdPedidoProveedor());
 
         if (entity.getEstadoNombre() != null) {
             pedido.setEstadoNombre(entity.getEstadoNombre());
