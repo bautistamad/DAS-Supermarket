@@ -10,6 +10,9 @@ public class PedidoProducto {
     private String productoNombre;
     private String productoImagen;
 
+    // Provider mapping
+    private Integer codigoBarraProveedor;
+
     public PedidoProducto() {
     }
 
@@ -57,5 +60,13 @@ public class PedidoProducto {
 
     public void setProductoImagen(String productoImagen) {
         this.productoImagen = productoImagen;
+    }
+
+    public Integer getCodigoBarraProveedor() {
+        return codigoBarraProveedor;
+    }
+
+    public void setCodigoBarraProveedor(Integer codigoBarraProveedor) {
+        this.codigoBarraProveedor = codigoBarraProveedor;
     }
 }

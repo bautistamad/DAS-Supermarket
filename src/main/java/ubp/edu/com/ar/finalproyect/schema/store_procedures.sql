@@ -38,7 +38,7 @@ BEGIN
             FROM Pedido p
             INNER JOIN Escala e ON p.evaluacionEscala = e.idEscala
             WHERE p.proveedor = Proveedor.id
-              AND p.estado = 5  -- Only delivered orders
+              AND p.estado = 4  -- Only delivered orders
               AND p.evaluacionEscala IS NOT NULL
               AND e.escalaInt IS NOT NULL
         )
@@ -838,9 +838,13 @@ BEGIN
         pp.codigoBarra,
         pp.cantidad,
         p.nombre AS productoNombre,
-        p.imagen AS productoImagen
+        p.imagen AS productoImagen,
+        prodprov.codigoBarraProveedor
     FROM PedidoProducto pp
              INNER JOIN Producto p ON pp.codigoBarra = p.codigoBarra
+             INNER JOIN Pedido ped ON pp.idPedido = ped.id
+             LEFT JOIN ProductoProveedor prodprov ON pp.codigoBarra = prodprov.codigoBarra
+                AND ped.proveedor = prodprov.idProveedor
     WHERE pp.idPedido = @idPedido
     ORDER BY p.nombre;
 END
@@ -1033,11 +1037,11 @@ BEGIN
             RETURN;
         END
 
-    -- Validate pedido state is "Entregado" (5)
+    -- Validate pedido state is "Entregado" (4)
     DECLARE @estadoId INT;
     SELECT @estadoId = estado FROM Pedido WHERE id = @idPedido;
 
-    IF @estadoId != 5
+    IF @estadoId != 4
         BEGIN
             RAISERROR('Pedido must be in Entregado state to be rated. Current state: %d', 16, 1, @estadoId);
             RETURN;

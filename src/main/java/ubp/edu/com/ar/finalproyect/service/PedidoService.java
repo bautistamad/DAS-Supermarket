@@ -88,8 +88,8 @@ public class PedidoService {
         logger.info("Order {} successfully assigned with provider {}",
                 pedidoGuardado.getId(), pedido.getProveedorId());
 
-        // Step 3: Update order with confirmation from provider (estado: Confirmado = 2)
-        logger.info("Step 3: Updating order {} status to Confirmado", pedidoGuardado.getId());
+        // Step 3: Update order with confirmation from provider (estado: En Proceso = 2)
+        logger.info("Step 3: Updating order {} status to En Proceso", pedidoGuardado.getId());
         pedidoAsignado.setId(pedidoGuardado.getId()); // Preserve our internal ID
         pedidoAsignado.setProveedorId(pedido.getProveedorId()); // Preserve proveedor
         pedidoAsignado.setProductos(pedidoGuardado.getProductos()); // Preserve products
@@ -179,7 +179,7 @@ public class PedidoService {
 
     /**
      * Query order status from provider and update local database
-     * Useful for syncing order status (En Preparación, En Tránsito, Entregado, etc.)
+     * Useful for syncing order status (En Proceso, Enviado, Entregado, etc.)
      */
     @Transactional
     public Pedido consultarEstadoPedido(Integer pedidoId) {
@@ -237,7 +237,7 @@ public class PedidoService {
     /**
      * Map provider's status string to our internal EstadoPedido ID
      * Provider statuses: "Asignado", "En Proceso", "En camino", "Entregado", "Cancelado"
-     * Our statuses: 1=Pendiente, 2=Confirmado, 3=En Preparación, 4=En Tránsito, 5=Entregado, 6=Cancelado
+     * Our statuses: 1=Pendiente, 2=En Proceso, 3=Enviado, 4=Entregado, 5=Cancelado
      */
     private Integer mapProviderStatusToEstadoId(String providerStatus) {
         if (providerStatus == null) {
@@ -245,11 +245,11 @@ public class PedidoService {
         }
 
         return switch (providerStatus.toLowerCase()) {
-            case "asignado" -> 2;           // Confirmado
-            case "en proceso" -> 3;         // En Preparación
-            case "en camino" -> 4;          // En Tránsito
-            case "entregado" -> 5;          // Entregado
-            case "cancelado" -> 6;          // Cancelado
+            case "asignado" -> 2;           // En Proceso
+            case "en proceso" -> 2;         // En Proceso
+            case "en camino" -> 3;          // Enviado
+            case "entregado" -> 4;          // Entregado
+            case "cancelado" -> 5;          // Cancelado
             default -> {
                 logger.warn("Unknown provider status: {}", providerStatus);
                 yield null;
@@ -269,10 +269,10 @@ public class PedidoService {
                 .orElseThrow(() -> new PedidoNotFoundException(pedidoId));
 
         // Validate order can be cancelled (not already delivered, cancelled, etc)
-        if (pedido.getEstadoId() == 5) { // Entregado
+        if (pedido.getEstadoId() == 4) { // Entregado
             throw new IllegalStateException("Cannot cancel order " + pedidoId + " - already delivered");
         }
-        if (pedido.getEstadoId() == 6) { // Cancelado
+        if (pedido.getEstadoId() == 5) { // Cancelado
             throw new IllegalStateException("Order " + pedidoId + " is already cancelled");
         }
 
@@ -290,7 +290,7 @@ public class PedidoService {
         }
 
         // Update the order status in our database
-        pedido.setEstadoId(6); // Cancelado
+        pedido.setEstadoId(5); // Cancelado
         Pedido updated = repository.update(pedido);
 
         logger.info("Successfully cancelled order {} and updated local status", pedidoId);
@@ -315,8 +315,8 @@ public class PedidoService {
         Pedido pedido = repository.findById(pedidoId)
                 .orElseThrow(() -> new PedidoNotFoundException(pedidoId));
 
-        // Validate order is delivered (estado = 5)
-        if (pedido.getEstadoId() != 5) {
+        // Validate order is delivered (estado = 4)
+        if (pedido.getEstadoId() != 4) {
             throw new IllegalStateException(
                     "Cannot rate order " + pedidoId + " - order must be delivered. Current status: " +
                     pedido.getEstadoNombre()

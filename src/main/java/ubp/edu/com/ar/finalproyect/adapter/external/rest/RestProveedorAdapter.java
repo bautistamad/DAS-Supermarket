@@ -1,5 +1,6 @@
 package ubp.edu.com.ar.finalproyect.adapter.external.rest;
 
+import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -29,8 +30,10 @@ public class RestProveedorAdapter implements ProveedorIntegration {
 
     private static final Logger logger = LoggerFactory.getLogger(RestProveedorAdapter.class);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final Gson gson;
 
-    public RestProveedorAdapter() {
+    public RestProveedorAdapter(Gson gson) {
+        this.gson = gson;
     }
 
     @Override
@@ -136,14 +139,24 @@ public class RestProveedorAdapter implements ProveedorIntegration {
             logger.info("Assigning order to provider: {} (clientId: {})", apiEndpoint, clientId);
 
             // Build request with productos from pedido using Maps
+            // IMPORTANT: Use codigoBarraProveedor instead of codigoBarra
             List<Map<String, Integer>> productosRequest = new ArrayList<>();
             for (PedidoProducto pp : pedido.getProductos()) {
+                // Use provider's barcode mapping from ProductoProveedor table
+                Integer codigoParaProveedor = pp.getCodigoBarraProveedor();
+                if (codigoParaProveedor == null) {
+                    logger.error("Product {} does not have codigoBarraProveedor mapping for provider. Skipping.",
+                            pp.getCodigoBarra());
+                    continue; // Skip products without provider mapping
+                }
+
                 Map<String, Integer> producto = new HashMap<>();
-                producto.put("codigoBarra", pp.getCodigoBarra());
+                producto.put("codigoBarra", codigoParaProveedor); // Use provider's barcode
                 producto.put("cantidad", pp.getCantidad());
                 productosRequest.add(producto);
             }
             AsignarPedidoRequest request = new AsignarPedidoRequest(productosRequest);
+            logger.info("Sending request to provider: {}", new com.google.gson.Gson().toJson(request));
 
             // Send request to provider
             AsignarPedidoResponse response = new Httpful(apiEndpoint)
@@ -153,14 +166,19 @@ public class RestProveedorAdapter implements ProveedorIntegration {
                     .post(request)
                     .execute(AsignarPedidoResponse.class);
 
+            System.out.println(gson.toJson(response));
+            logger.info("Received response from provider: {}", new com.google.gson.Gson().toJson(response));
+
             if (response == null || response.getPedido() == null) {
                 logger.error("Received null response from provider for order assignment");
                 return null;
             }
 
             Map<String, Object> providerPedido = response.getPedido();
+            logger.info("Provider pedido map: {}", providerPedido);
             Object idPedidoObj = providerPedido.get("idPedido");
-            logger.info("Order successfully assigned with provider. Provider order ID: {}", idPedidoObj);
+            logger.info("Order successfully assigned with provider. Provider order ID: {} (type: {})",
+                    idPedidoObj, idPedidoObj != null ? idPedidoObj.getClass().getName() : "null");
 
             // Update our pedido with provider's respons e
             Pedido updatedPedido = new Pedido();
@@ -185,8 +203,8 @@ public class RestProveedorAdapter implements ProveedorIntegration {
                 logger.info("Saved provider order ID: {}", idPedidoProveedor);
             }
 
-            updatedPedido.setEstadoId(2); // Confirmado (estado 2)
-            updatedPedido.setEstadoNombre("Confirmado");
+            updatedPedido.setEstadoId(2); // En Proceso (estado 2)
+            updatedPedido.setEstadoNombre("En Proceso");
 
             // Parse fechaEstimada from provider
             String fechaEstimada = (String) providerPedido.get("fechaEstimada");
@@ -264,7 +282,7 @@ public class RestProveedorAdapter implements ProveedorIntegration {
             // Create a Pedido object with updated status
             Pedido pedido = new Pedido();
             pedido.setId(idPedido);
-            pedido.setEstadoId(6); // EstadoPedido: Cancelado
+            pedido.setEstadoId(5); // EstadoPedido: Cancelado
             pedido.setEstadoNombre("Cancelado");
             pedido.setEstadoDescripcion(response.getDescription());
 

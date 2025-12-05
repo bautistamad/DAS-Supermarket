@@ -7,11 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * DTO for sending order assignment request to provider
- * Provider expects: {"Pedido": {"productos": [{"codigoBarra": 1, "cantidad":
- * 10}, ...]}}
- */
+
 public class AsignarPedidoRequest {
 
     @SerializedName("Pedido")
