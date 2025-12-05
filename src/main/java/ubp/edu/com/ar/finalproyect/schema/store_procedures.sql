@@ -1060,3 +1060,72 @@ BEGIN
     WHERE p.id = @idPedido;
 END
 GO
+
+-- =============================================
+-- Usuario Stored Procedures
+-- =============================================
+
+-- =============================================
+-- Save Usuario (Create)
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_save_usuario
+    @username NVARCHAR(100),
+    @email NVARCHAR(255),
+    @passwordHash NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validar que no exista el username
+    IF EXISTS (SELECT 1 FROM Usuario WHERE username = @username)
+    BEGIN
+        RAISERROR('Username already exists', 16, 1);
+        RETURN;
+    END
+
+    -- Validar que no exista el email
+    IF EXISTS (SELECT 1 FROM Usuario WHERE email = @email)
+    BEGIN
+        RAISERROR('Email already exists', 16, 1);
+        RETURN;
+    END
+
+    -- Insertar
+    INSERT INTO Usuario (username, email, passwordHash, fechaCreacion, fechaActualizacion)
+    VALUES (@username, @email, @passwordHash, GETDATE(), GETDATE());
+
+    -- Retornar el usuario creado (sin password)
+    SELECT id, username, email, fechaCreacion, fechaActualizacion
+    FROM Usuario
+    WHERE id = SCOPE_IDENTITY();
+END
+GO
+
+-- =============================================
+-- Find Usuario by Username
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_find_usuario_by_username
+    @username NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT id, username, email, passwordHash, fechaCreacion, fechaActualizacion
+    FROM Usuario
+    WHERE username = @username;
+END
+GO
+
+-- =============================================
+-- Find All Usuarios
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_find_all_usuarios
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT id, username, email, fechaCreacion, fechaActualizacion
+    FROM Usuario
+    ORDER BY fechaCreacion DESC;
+END
+GO

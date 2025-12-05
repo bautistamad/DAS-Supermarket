@@ -58,6 +58,12 @@
             <artifactId>spring-modulith-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- BCrypt for password hashing -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
         <!-- Jakarta REST Client (Jersey) -->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>

@@ -162,3 +162,32 @@ BEGIN
 END
 GO
 
+-- =============================================
+-- Usuario table for authentication
+-- =============================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Usuario')
+BEGIN
+CREATE TABLE Usuario (
+    id INT PRIMARY KEY IDENTITY(1,1),
+    username NVARCHAR(100) NOT NULL UNIQUE,
+    email NVARCHAR(255) NOT NULL UNIQUE,
+    passwordHash NVARCHAR(255) NOT NULL,
+    fechaCreacion DATETIME DEFAULT GETDATE(),
+    fechaActualizacion DATETIME DEFAULT GETDATE(),
+
+    CONSTRAINT CHK_Usuario_Username CHECK (LEN(username) >= 3),
+    CONSTRAINT CHK_Usuario_Email CHECK (email LIKE '%@%.%')
+);
+
+-- Indexes for faster lookups
+CREATE INDEX IX_Usuario_Username ON Usuario(username);
+CREATE INDEX IX_Usuario_Email ON Usuario(email);
+
+PRINT 'Usuario table created successfully.';
+END
+ELSE
+BEGIN
+    PRINT 'Usuario table already exists.';
+END
+GO
+
