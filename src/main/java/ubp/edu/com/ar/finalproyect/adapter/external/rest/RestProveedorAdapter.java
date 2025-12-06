@@ -257,7 +257,7 @@ public class RestProveedorAdapter implements ProveedorIntegration {
                     clientId);
 
             CancelacionPedido response = new Httpful(apiEndpoint)
-                    .path("/api/cancelarPedido")
+                    .path("/api/proveedor/cancelarPedido")
                     .addQueryParam("clientId", clientId)
                     .addQueryParam("apikey", apiKey)
                     .addQueryParam("idPedido", idPedido.toString())

@@ -279,7 +279,7 @@ public class PedidoService {
         // Try to cancel with the provider
         Pedido pedidoCancelado = integrationService.cancelarPedidoWithProveedor(
                 pedido.getProveedorId(),
-                pedidoId
+                pedido.getIdPedidoProveedor()
         );
 
         if (pedidoCancelado == null) {

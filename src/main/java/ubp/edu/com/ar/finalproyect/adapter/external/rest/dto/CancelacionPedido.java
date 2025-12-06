@@ -1,8 +1,12 @@
 package ubp.edu.com.ar.finalproyect.adapter.external.rest.dto;
 
+import com.google.gson.annotations.SerializedName;
+
 public class CancelacionPedido {
     private String idPedido;
     private String estado;
+
+    @SerializedName("descripcion")
     private String description;
 
     public String getDescription() {
