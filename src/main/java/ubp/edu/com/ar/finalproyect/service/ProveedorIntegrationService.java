@@ -7,9 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 import ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
+import ubp.edu.com.ar.finalproyect.domain.ProductoProveedor;
 import ubp.edu.com.ar.finalproyect.domain.Proveedor;
 import ubp.edu.com.ar.finalproyect.exception.ProveedorNotFoundException;
 import ubp.edu.com.ar.finalproyect.port.HistorialPrecioRepository;
+import ubp.edu.com.ar.finalproyect.port.ProductoProveedorRepository;
 import ubp.edu.com.ar.finalproyect.port.ProductoRepository;
 import ubp.edu.com.ar.finalproyect.port.ProveedorIntegration;
 import ubp.edu.com.ar.finalproyect.port.ProveedorRepository;
@@ -25,15 +27,18 @@ public class ProveedorIntegrationService {
 
     private final ProveedorRepository proveedorRepository;
     private final ProductoRepository productoRepository;
+    private final ProductoProveedorRepository productoProveedorRepository;
     private final HistorialPrecioRepository historialPrecioRepository;
     private final ProveedorIntegrationFactory factory;
 
     public ProveedorIntegrationService(ProveedorRepository proveedorRepository,
                                        ProductoRepository productoRepository,
+                                       ProductoProveedorRepository productoProveedorRepository,
                                        HistorialPrecioRepository historialPrecioRepository,
                                        ProveedorIntegrationFactory factory) {
         this.proveedorRepository = proveedorRepository;
         this.productoRepository = productoRepository;
+        this.productoProveedorRepository = productoProveedorRepository;
         this.historialPrecioRepository = historialPrecioRepository;
         this.factory = factory;
     }
@@ -199,25 +204,48 @@ public class ProveedorIntegrationService {
 
         logger.info("Received {} products from provider {}", productosProveedor.size(), proveedorId);
 
-        // 2. Get assigned products
-        List<Integer> codigosAsignados = productoRepository.findByProviderId(proveedorId).stream()
-                .map(Producto::getCodigoBarra)
-                .toList();
+        // 2. Build mapping: codigoBarraProveedor → codigoBarra (internal)
+        //    Provider returns products with THEIR barcode, we need to map to OUR internal barcode
+        List<Producto> productosAsignados = productoRepository.findByProviderId(proveedorId);
+        Map<Integer, Integer> proveedorToInternalMap = new HashMap<>();
+
+        for (Producto p : productosAsignados) {
+            // Get the ProductoProveedor mapping to find codigoBarraProveedor
+            ProductoProveedor mapping = productoProveedorRepository.findByProveedorAndProducto(
+                    proveedorId,
+                    p.getCodigoBarra()
+            );
+
+            if (mapping != null && mapping.getCodigoBarraProveedor() != null) {
+                // Map: provider's barcode → our internal barcode
+                proveedorToInternalMap.put(mapping.getCodigoBarraProveedor(), p.getCodigoBarra());
+                logger.debug("Mapped provider barcode {} to internal barcode {}",
+                        mapping.getCodigoBarraProveedor(), p.getCodigoBarra());
+            }
+        }
+
+        logger.info("Mapped {} products for provider {}", proveedorToInternalMap.size(), proveedorId);
 
         // 3. Sync prices for assigned products only
-        for (Producto producto : productosProveedor) {
-            if (!codigosAsignados.contains(producto.getCodigoBarra())) {
+        for (Producto productoProveedor : productosProveedor) {
+            // productoProveedor.getCodigoBarra() contains the PROVIDER's barcode
+            Integer codigoBarraInterno = proveedorToInternalMap.get(productoProveedor.getCodigoBarra());
+
+            if (codigoBarraInterno == null) {
+                logger.debug("Skipping provider product {} - not mapped to internal product",
+                        productoProveedor.getCodigoBarra());
                 continue; // Skip products not assigned to this provider
             }
 
-            Float precio = extractPrecio(producto);
+            Float precio = extractPrecio(productoProveedor);
             if (precio == null) {
+                logger.warn("Skipping product {} - no price available", productoProveedor.getCodigoBarra());
                 continue; // Skip products without price
             }
 
             try {
                 Map<String, Object> syncResult = historialPrecioRepository.syncPrecio(
-                        producto.getCodigoBarra(),
+                        codigoBarraInterno,  // Use internal barcode for our database
                         precio,
                         proveedorId
                 );
@@ -225,7 +253,7 @@ public class ProveedorIntegrationService {
                 updateResultCounters(result, syncResult);
 
             } catch (Exception e) {
-                logger.error("Error syncing product {}: {}", producto.getCodigoBarra(), e.getMessage());
+                logger.error("Error syncing product {}: {}", codigoBarraInterno, e.getMessage());
                 result.put("errors", result.get("errors") + 1);
             }
         }
@@ -341,6 +369,42 @@ public class ProveedorIntegrationService {
         }
     }
 
+    /**
+     * Estimate order price from provider
+     * @param proveedorId Provider ID
+     * @param pedido Order with products to estimate
+     * @return Map with estimation details (precioEstimadoTotal, fechaEstimada, productosJson) or null if failed
+     */
+    public Map<String, Object> estimarPedidoWithProveedor(Integer proveedorId, Pedido pedido) {
+        logger.info("Estimating order with provider ID: {}", proveedorId);
+
+        Proveedor proveedor = getProveedor(proveedorId);
+
+        try {
+            ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
+            Map<String, Object> estimacion = adapter.estimarPedido(
+                    proveedor.getApiEndpoint(),
+                    proveedor.getClientId(),
+                    proveedor.getApiKey(),
+                    pedido
+            );
+
+            if (estimacion != null) {
+                logger.info("Successfully estimated order with provider {}. Total price: {}",
+                        proveedorId, estimacion.get("precioEstimadoTotal"));
+            } else {
+                logger.warn("Failed to estimate order with provider {}. Provider did not return estimation.",
+                        proveedorId);
+            }
+
+            return estimacion;
+
+        } catch (Exception e) {
+            logger.error("Exception occurred while estimating order with provider {}",
+                    proveedorId, e);
+            return null;
+        }
+    }
 
     private Proveedor getProveedor(Integer proveedorId) {
         return proveedorRepository.findById(proveedorId)

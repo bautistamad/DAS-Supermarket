@@ -5,6 +5,7 @@ import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
 
 import java.util.List;
+import java.util.Map;
 
 
 public interface ProveedorIntegration {
@@ -40,4 +41,14 @@ public interface ProveedorIntegration {
      */
     boolean enviarEvaluacion(String apiEndpoint, String clientId, String apiKey,
                             Integer pedidoId, Integer puntuacion);
+
+    /**
+     * Estimate order price from provider
+     * @param apiEndpoint Provider's API endpoint
+     * @param clientId Client authentication ID
+     * @param apiKey Client API key
+     * @param pedido Order with products to estimate
+     * @return Map with estimation details (precioEstimadoTotal, fechaEstimada, productosJson)
+     */
+    Map<String, Object> estimarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido);
 }

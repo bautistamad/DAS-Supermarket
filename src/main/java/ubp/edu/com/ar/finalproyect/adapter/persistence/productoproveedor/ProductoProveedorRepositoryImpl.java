@@ -60,6 +60,29 @@ public class ProductoProveedorRepositoryImpl implements ProductoProveedorReposit
         jdbcCall.execute(in);
     }
 
+    @Override
+    public ProductoProveedor findByProveedorAndProducto(Integer idProveedor, Integer codigoBarra) {
+        SqlParameterSource in = new MapSqlParameterSource()
+                .addValue("idProveedor", idProveedor)
+                .addValue("codigoBarra", codigoBarra);
+
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_find_producto_proveedor")
+                .withSchemaName("dbo")
+                .returningResultSet("result", BeanPropertyRowMapper.newInstance(ProductoProveedorEntity.class));
+
+        Map<String, Object> out = jdbcCall.execute(in);
+
+        @SuppressWarnings("unchecked")
+        List<ProductoProveedorEntity> result = (List<ProductoProveedorEntity>) out.get("result");
+
+        if (result != null && !result.isEmpty()) {
+            return toDomain(result.get(0));
+        }
+
+        return null;
+    }
+
     // Helper: Entity → Domain
     private ProductoProveedor toDomain(ProductoProveedorEntity entity) {
         ProductoProveedor domain = new ProductoProveedor();

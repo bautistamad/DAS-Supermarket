@@ -1133,3 +1133,54 @@ BEGIN
     ORDER BY fechaCreacion DESC;
 END
 GO
+
+-- =============================================
+-- Find Products with Low Stock (below minimum)
+-- Returns products where actualStock <= stockMinimo
+-- Used for automatic order generation
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_find_productos_bajo_stock
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        codigoBarra,
+        nombre,
+        imagen,
+        stockMinimo,
+        stockMaximo,
+        stockActual
+    FROM Producto
+    WHERE stockActual <= stockMinimo
+      AND stockMaximo > stockActual  -- Only products that can be restocked
+    ORDER BY stockActual ASC;  -- Lowest stock first
+END
+GO
+
+-- =============================================
+-- Find ProductoProveedor mapping
+-- Used to check if provider has a specific product
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_find_producto_proveedor
+    @idProveedor INT,
+    @codigoBarra INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        pp.idProveedor,
+        pp.codigoBarra,
+        pp.codigoBarraProveedor,
+        pp.estado,
+        pp.fechaActualizacion,
+        p.nombre AS productoNombre,
+        pr.nombre AS proveedorNombre
+    FROM ProductoProveedor pp
+    LEFT JOIN Producto p ON pp.codigoBarra = p.codigoBarra
+    LEFT JOIN Proveedor pr ON pp.idProveedor = pr.id
+    WHERE pp.idProveedor = @idProveedor
+      AND pp.codigoBarra = @codigoBarra;
+END
+GO

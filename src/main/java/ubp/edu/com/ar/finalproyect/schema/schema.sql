@@ -100,6 +100,16 @@ END
 ELSE
 BEGIN
     PRINT 'PedidoProducto table already exists.';
+
+    -- Ensure CASCADE DELETE is configured (in case table was created before CASCADE was added)
+    IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_PedidoProducto_Pedido' AND delete_referential_action <> 1)
+    BEGIN
+        PRINT 'Fixing FK_PedidoProducto_Pedido to include ON DELETE CASCADE...';
+        ALTER TABLE PedidoProducto DROP CONSTRAINT FK_PedidoProducto_Pedido;
+        ALTER TABLE PedidoProducto ADD CONSTRAINT FK_PedidoProducto_Pedido
+            FOREIGN KEY (idPedido) REFERENCES Pedido(id) ON DELETE CASCADE;
+        PRINT 'FK_PedidoProducto_Pedido updated with CASCADE DELETE.';
+    END
 END
 GO
 

@@ -172,6 +172,27 @@ public class ProductoRepositoryImpl implements ProductoRepository {
         return List.of();
     }
 
+    @Override
+    public List<Producto> findProductosBajoStock() {
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_find_productos_bajo_stock")
+                .withSchemaName("dbo")
+                .returningResultSet("products", BeanPropertyRowMapper.newInstance(ProductoEntity.class));
+
+        Map<String, Object> out = jdbcCall.execute();
+
+        @SuppressWarnings("unchecked")
+        List<ProductoEntity> result = (List<ProductoEntity>) out.get("products");
+
+        if (result != null) {
+            return result.stream()
+                    .map(this::toDomain)
+                    .toList();
+        }
+
+        return List.of();
+    }
+
     // Helper: Entity → Domain
     private Producto toDomain(ProductoEntity entity) {
         Producto producto = new Producto(

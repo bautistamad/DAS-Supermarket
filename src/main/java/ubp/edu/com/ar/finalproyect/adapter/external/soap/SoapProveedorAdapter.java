@@ -10,6 +10,7 @@ import ubp.edu.com.ar.finalproyect.port.ProveedorIntegration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component("soapProveedorAdapter")
 public class SoapProveedorAdapter implements ProveedorIntegration {
@@ -67,6 +68,13 @@ public class SoapProveedorAdapter implements ProveedorIntegration {
             apiEndpoint, clientId, pedidoId, puntuacion);
         logger.info("Returning false - SOAP adapter not yet implemented");
         return false;
+    }
+
+    @Override
+    public Map<String, Object> estimarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido) {
+        logger.warn("SOAP adapter stub called for estimarPedido. WSDL: {}, clientId: {}", apiEndpoint, clientId);
+        logger.info("Returning null - SOAP adapter not yet implemented");
+        return null;
     }
 
 }

@@ -326,4 +326,59 @@ public class RestProveedorAdapter implements ProveedorIntegration {
         }
     }
 
+    @Override
+    public Map<String, Object> estimarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido) {
+        try {
+            logger.info("Estimating order with provider: {} (clientId: {})", apiEndpoint, clientId);
+
+            // Build request with productos from pedido using Maps
+            List<Map<String, Integer>> productosRequest = new ArrayList<>();
+            for (PedidoProducto pp : pedido.getProductos()) {
+                Integer codigoParaProveedor = pp.getCodigoBarraProveedor();
+                if (codigoParaProveedor == null) {
+                    logger.error("Product {} does not have codigoBarraProveedor mapping for provider. Skipping.",
+                            pp.getCodigoBarra());
+                    continue;
+                }
+
+                Map<String, Integer> producto = new HashMap<>();
+                producto.put("codigoBarra", codigoParaProveedor);
+                producto.put("cantidad", pp.getCantidad());
+                productosRequest.add(producto);
+            }
+
+            // Build request body matching provider's expected format
+            Map<String, Object> pedidoMap = new HashMap<>();
+            pedidoMap.put("productos", productosRequest);
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("Pedido", pedidoMap);
+
+            logger.info("Sending estimation request to provider: {}", gson.toJson(requestBody));
+
+            // Send request to provider
+            Map<String, Object> response = new Httpful(apiEndpoint)
+                    .path("/api/proveedor/estimarPedido")
+                    .addQueryParam("clientId", clientId)
+                    .addQueryParam("apikey", apiKey)
+                    .post(requestBody)
+                    .execute(Map.class);
+
+            if (response == null || !response.containsKey("Pedido")) {
+                logger.error("Received null or invalid response from provider for order estimation");
+                return null;
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> estimacion = (Map<String, Object>) response.get("Pedido");
+            logger.info("Received estimation from provider: {}", gson.toJson(estimacion));
+
+            return estimacion;
+
+        } catch (Exception e) {
+            logger.error("Failed to estimate order with provider endpoint: {}", apiEndpoint, e);
+            return null;
+        }
+    }
+
 }
