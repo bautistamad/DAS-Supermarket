@@ -75,6 +75,11 @@
             <artifactId>jersey-hk2</artifactId>
             <version>3.0.2</version>
         </dependency>
+        <dependency>
+            <groupId>com.sun.xml.ws</groupId>
+            <artifactId>jaxws-maven-plugin</artifactId>
+            <version>3.0.1</version>
+        </dependency>
         <!-- Gson for JSON serialization -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -105,6 +110,115 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>jaxws-maven-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>wsimport-utils</id>
+                        <goals>
+                            <goal>wsimport</goal>
+                        </goals>
+                        <configuration>
+                            <wsdlUrls>
+                                <wsdlUrl>http://localhost:8086/ws/utils?wsdl</wsdlUrl>
+                            </wsdlUrls>
+                            <packageName>ubp.edu.com.ar.finalproyect.adapter.external.soap.dto.utils</packageName>
+                            <sourceDestDir>${project.build.directory}/generated-sources/wsimport</sourceDestDir>
+                            <keep>true</keep>
+                            <extension>true</extension>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>wsimport-productos-wsdl</id>
+                        <goals>
+                            <goal>wsimport</goal>
+                        </goals>
+                        <configuration>
+                            <wsdlUrls>
+                                <wsdlUrl>http://localhost:8086/ws/productos?wsdl</wsdlUrl>
+                            </wsdlUrls>
+                            <packageName>ubp.edu.com.ar.finalproyect.adapter.external.soap.dto.productos</packageName>
+                            <sourceDestDir>${project.build.directory}/generated-sources/wsimport</sourceDestDir>
+                            <keep>true</keep>
+                            <extension>true</extension>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>wsimport-pedidos-wsdl</id>
+                        <goals>
+                            <goal>wsimport</goal>
+                        </goals>
+                        <configuration>
+                            <wsdlUrls>
+                                <wsdlUrl>http://localhost:8086/ws/pedidos?wsdl</wsdlUrl>
+                            </wsdlUrls>
+                            <packageName>ubp.edu.com.ar.finalproyect.adapter.external.soap.dto.pedidos</packageName>
+                            <sourceDestDir>${project.build.directory}/generated-sources/wsimport</sourceDestDir>
+                            <keep>true</keep>
+                            <extension>true</extension>
+                            <encoding>UTF-8</encoding>
+                            <verbose>false</verbose>
+                            <wsdlLocation>http://localhost:8086/ws/pedidos?wsdl</wsdlLocation>
+                            <args>
+                                <arg>-B-XautoNameResolution</arg>
+                            </args>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <version>3.3.1</version>
+            <executions>
+            <execution>
+            <id>copy-generated-java</id>
+            <phase>prepare-package</phase>
+            <goals><goal>copy-resources</goal>
+            </goals>
+                <configuration>
+                    <outputDirectory>${project.basedir}/src/main/java</outputDirectory>
+                    <resources>
+                        <resource>
+
+                            <directory>${project.build.directory}/generated-
+                                sources/wsimport</directory>
+
+                            <includes>
+                                <include>**/*.java</include>
+                            </includes>
+                        </resource>
+                    </resources>
+                </configuration>
+            </execution>
+            </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>clean-generated-files</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>${project.build.directory}/generated-
+                                        sources/wsimport</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

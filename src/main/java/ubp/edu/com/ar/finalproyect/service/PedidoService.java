@@ -93,6 +93,7 @@ public class PedidoService {
         pedidoAsignado.setId(pedidoGuardado.getId()); // Preserve our internal ID
         pedidoAsignado.setProveedorId(pedido.getProveedorId()); // Preserve proveedor
         pedidoAsignado.setProductos(pedidoGuardado.getProductos()); // Preserve products
+        pedidoAsignado.setEstadoId(2); // Set to "En Proceso" status
 
         logger.info("About to update order {} with: estado={}, idPedidoProveedor={}, fechaEstimada={}",
                 pedidoAsignado.getId(), pedidoAsignado.getEstadoId(),

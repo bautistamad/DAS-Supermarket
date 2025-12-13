@@ -172,13 +172,25 @@ go
 -- Delete Producto by Barcode
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_delete_product
-@codigoBarra INT
-AS
+    @codigoBarra INT
+    AS
 BEGIN
     SET NOCOUNT ON;
 
-    DELETE FROM Producto
-    WHERE codigoBarra = @codigoBarra;
+BEGIN TRANSACTION;
+BEGIN TRY
+DELETE FROM ProductoProveedor
+WHERE codigoBarra = @codigoBarra;
+
+DELETE FROM Producto
+WHERE codigoBarra = @codigoBarra;
+
+COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+ROLLBACK TRANSACTION;
+        THROW; -- Re-lanza el error original
+END CATCH
 END
 GO
 
