@@ -198,15 +198,44 @@ GO
 -- Delete Proveedor by ID
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_delete_provider
-@id INT
-AS
+    @id INT
+    AS
 BEGIN
     SET NOCOUNT ON;
 
-    DELETE FROM Proveedor
-    WHERE id = @id;
+    IF EXISTS (SELECT 1 FROM Pedido
+               WHERE proveedor = @id
+               AND estado IN (1, 2, 3))
+BEGIN
+        RAISERROR('No se puede eliminar: El proveedor tiene pedidos en curso (no finalizados).', 16, 1);
+        RETURN;
 END
-go
+
+BEGIN TRANSACTION;
+BEGIN TRY
+
+DELETE FROM ProductoProveedor
+WHERE idProveedor = @id;
+
+
+DELETE FROM Pedido
+WHERE proveedor = @id;
+
+
+DELETE FROM Proveedor
+WHERE id = @id;
+
+COMMIT TRANSACTION;
+PRINT 'Proveedor y todo su historial de pedidos han sido eliminados permanentemente.';
+
+END TRY
+BEGIN CATCH
+ROLLBACK TRANSACTION;
+        -- Relanzar el error para que la aplicación lo detecte
+        THROW;
+END CATCH
+END
+GO
 
 -- =============================================
 -- Find Proveedor by ID
@@ -1194,5 +1223,33 @@ BEGIN
     LEFT JOIN Proveedor pr ON pp.idProveedor = pr.id
     WHERE pp.idProveedor = @idProveedor
       AND pp.codigoBarra = @codigoBarra;
+END
+GO
+
+-- =============================================
+-- Trigger to update product stock when order is delivered (estado = 4)
+-- When an order status changes to 4 (Entregado), update stockActual
+-- by adding the quantities of all products in that order
+-- =============================================
+CREATE OR ALTER TRIGGER trg_update_stock_on_pedido_delivered
+ON Pedido
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Only process if estado was updated
+    IF UPDATE(estado)
+    BEGIN
+        -- Update stock for all products in orders that just transitioned to estado = 4
+        UPDATE Producto
+        SET stockActual = stockActual + pp.cantidad
+        FROM Producto p
+        INNER JOIN PedidoProducto pp ON p.codigoBarra = pp.codigoBarra
+        INNER JOIN inserted i ON pp.idPedido = i.id
+        INNER JOIN deleted d ON i.id = d.id
+        WHERE i.estado = 4  -- New estado is "Entregado"
+          AND d.estado != 4  -- Old estado was not "Entregado" (to avoid double-updates)
+    END
 END
 GO
