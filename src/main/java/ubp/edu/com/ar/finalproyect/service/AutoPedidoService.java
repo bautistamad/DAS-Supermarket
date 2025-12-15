@@ -54,12 +54,21 @@ public class AutoPedidoService {
         logger.info("Found {} products below minimum stock", productosBajos.size());
 
         // 2. Evaluar proveedores
-        List<Proveedor> proveedores = proveedorRepository.findAll();
-        logger.info("Evaluating {} providers", proveedores.size());
+        List<Proveedor> todosProveedores = proveedorRepository.findAll();
+        // Filter only active providers
+        List<Proveedor> proveedores = todosProveedores.stream()
+            .filter(p -> p.getActivo() != null && p.getActivo())
+            .toList();
+
+        if (proveedores.isEmpty()) {
+            return buildResponse(false, "No hay proveedores activos disponibles", null, null, 0, 0.0f, null);
+        }
+
+        logger.info("Evaluating {} active providers (out of {} total)", proveedores.size(), todosProveedores.size());
         Map<String, Object> mejorOpcion = null;
 
         for (Proveedor proveedor : proveedores) {
-            logger.info("Checking provider: {} (ID: {})", proveedor.getName(), proveedor.getId());
+            logger.info("Checking active provider: {} (ID: {})", proveedor.getName(), proveedor.getId());
 
             // Preparar productos para este proveedor
             List<PedidoProducto> productosPedido = prepararProductosPedido(productosBajos, proveedor);

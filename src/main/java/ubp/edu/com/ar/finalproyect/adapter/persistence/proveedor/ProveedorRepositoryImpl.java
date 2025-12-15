@@ -32,7 +32,8 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
                 .addValue("apiEndpoint", proveedor.getApiEndpoint())
                 .addValue("tipoServicio", proveedor.getTipoServicio())
                 .addValue("clientId", proveedor.getClientId())
-                .addValue("apiKey", proveedor.getApiKey());
+                .addValue("apiKey", proveedor.getApiKey())
+                .addValue("activo", proveedor.getActivo());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_save_provider")
@@ -111,7 +112,7 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
 
     // Helper: Entity → Domain
     private Proveedor toDomain(ProveedorEntity entity) {
-        return new Proveedor(
+        Proveedor proveedor = new Proveedor(
                 entity.getId(),
                 entity.getNombre(),
                 entity.getApiEndpoint(),
@@ -121,6 +122,8 @@ public class ProveedorRepositoryImpl implements ProveedorRepository {
                 entity.getApiKey(),
                 entity.getRatingPromedio()
         );
+        proveedor.setActivo(entity.getActivo());
+        return proveedor;
     }
 
     // Helper: Domain → Entity

@@ -11,6 +11,7 @@ public class ProveedorEntity {
     private String clientId;
     private String apiKey;
     private Double ratingPromedio;
+    private Boolean activo;
 
     public ProveedorEntity() {
     }
@@ -87,6 +88,14 @@ public class ProveedorEntity {
 
     public void setRatingPromedio(Double ratingPromedio) {
         this.ratingPromedio = ratingPromedio;
+    }
+
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
     }
 }
 

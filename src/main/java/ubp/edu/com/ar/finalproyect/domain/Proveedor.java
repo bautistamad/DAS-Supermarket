@@ -10,6 +10,7 @@ public class Proveedor {
     private String clientId;
     private String apiKey;
     private Double ratingPromedio;
+    private Boolean activo;
 
     public String getName() {
         return name;
@@ -73,6 +74,14 @@ public class Proveedor {
 
     public void setRatingPromedio(Double ratingPromedio) {
         this.ratingPromedio = ratingPromedio;
+    }
+
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
     }
 
     public Proveedor() {

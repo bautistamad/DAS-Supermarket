@@ -19,6 +19,17 @@ END
 GO
 
 -- =============================================
+-- Add activo column to Proveedor table
+-- Default is 0 (inactive) - must be enabled by user
+-- =============================================
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Proveedor') AND name = 'activo')
+BEGIN
+    ALTER TABLE Proveedor ADD activo BIT DEFAULT 0;
+    PRINT 'Column activo added to Proveedor table successfully.';
+END
+GO
+
+-- =============================================
 -- Trigger to update provider rating when order is evaluated
 -- =============================================
 CREATE OR ALTER TRIGGER trg_update_proveedor_rating
@@ -145,7 +156,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey, p.ratingPromedio
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey, p.ratingPromedio, p.activo
     FROM Proveedor p
     LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
     ORDER BY p.nombre;
@@ -246,7 +257,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey, p.ratingPromedio
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey, p.ratingPromedio, p.activo
     FROM Proveedor p
     LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
     WHERE p.id = @id;
@@ -385,7 +396,8 @@ CREATE OR ALTER PROCEDURE sp_save_provider
     @apiEndpoint NVARCHAR(255),
     @tipoServicio INT,
     @clientId NVARCHAR(255),
-    @apiKey NVARCHAR(255)
+    @apiKey NVARCHAR(255),
+    @activo BIT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -399,20 +411,21 @@ BEGIN
                 apiEndpoint = @apiEndpoint,
                 tipoServicio = @tipoServicio,
                 clientId = @clientId,
-                apiKey = @apiKey
+                apiKey = @apiKey,
+                activo = CASE WHEN @activo IS NOT NULL THEN @activo ELSE activo END
             WHERE id = @id;
         END
     ELSE
         BEGIN
             -- INSERT
-            INSERT INTO Proveedor (nombre, apiEndpoint, tipoServicio, clientId, apiKey)
-            VALUES (@nombre, @apiEndpoint, @tipoServicio, @clientId, @apiKey);
+            INSERT INTO Proveedor (nombre, apiEndpoint, tipoServicio, clientId, apiKey, activo)
+            VALUES (@nombre, @apiEndpoint, @tipoServicio, @clientId, @apiKey, COALESCE(@activo, 0));
 
             SET @id = SCOPE_IDENTITY();
         END
 
     -- Return the saved proveedor
-    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey, p.ratingPromedio
+    SELECT p.id, p.nombre, p.apiEndpoint, p.tipoServicio, ts.nombre AS tipoServicioNombre, p.clientId, p.apiKey, p.ratingPromedio, p.activo
     FROM Proveedor p
     LEFT JOIN TipoServicio ts ON p.tipoServicio = ts.id
     WHERE p.id = @id;

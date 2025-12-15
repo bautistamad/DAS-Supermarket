@@ -137,4 +137,22 @@ public class ProveedorService {
         repository.deleteById(id);
     }
 
+    public Proveedor toggleActivo(Integer id, Boolean activo) {
+        if (id == null) {
+            throw new IllegalArgumentException("Proveedor ID cannot be null");
+        }
+        if (activo == null) {
+            throw new IllegalArgumentException("Activo status cannot be null");
+        }
+
+        Proveedor proveedor = repository.findById(id)
+            .orElseThrow(() -> new ProveedorNotFoundException(id));
+
+        proveedor.setActivo(activo);
+        Proveedor updated = repository.save(proveedor);
+
+        logger.info("Provider {} status updated to activo={}", id, activo);
+        return updated;
+    }
+
 }

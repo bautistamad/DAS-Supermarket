@@ -18,6 +18,7 @@ CREATE TABLE Proveedor (
                            tipoServicio INT NULL,
                            clientId NVARCHAR(255) NULL,
                            apiKey NVARCHAR(255) NULL,
+                           activo BIT DEFAULT 0,
 
                            CONSTRAINT FK_Proveedor_TipoServicio
                                FOREIGN KEY (tipoServicio) REFERENCES TipoServicio(id)

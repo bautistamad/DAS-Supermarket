@@ -72,4 +72,15 @@ public class ProveedorController {
                 .orElseThrow(() -> new RuntimeException("Proveedor not found"));
         return ResponseEntity.ok(proveedor.getRatingPromedio());
     }
+
+    // PUT /api/proveedores/{id}/toggle-activo - Enable/Disable a provider
+    @PutMapping("/{id}/toggle-activo")
+    public ResponseEntity<Proveedor> toggleProveedor(@PathVariable Integer id, @RequestBody Map<String, Boolean> request) {
+        Boolean activo = request.get("activo");
+        if (activo == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        Proveedor updated = proveedorService.toggleActivo(id, activo);
+        return ResponseEntity.ok(updated);
+    }
 }
