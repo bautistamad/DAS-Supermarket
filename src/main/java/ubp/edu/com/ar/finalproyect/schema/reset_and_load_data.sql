@@ -53,8 +53,6 @@ PRINT '------------------------------------';
 
 -- 1. ESTADOS DE PRODUCTO (Required catalog)
 PRINT 'Inserting EstadoProducto...';
--- Reset identity to start from 1
-DBCC CHECKIDENT ('EstadoProducto', RESEED, 0);
 INSERT INTO EstadoProducto (nombre, descripcion) VALUES
 ('Disponible', 'Producto disponible para la venta'),
 ('Agotado', 'Producto sin stock disponible'),
@@ -62,16 +60,12 @@ INSERT INTO EstadoProducto (nombre, descripcion) VALUES
 
 -- 2. TIPOS DE SERVICIO (Required catalog)
 PRINT 'Inserting TipoServicio...';
--- Reset identity to start from 1
-DBCC CHECKIDENT ('TipoServicio', RESEED, 0);
 INSERT INTO TipoServicio (nombre) VALUES
 ('REST'),
 ('SOAP');
 
 -- 3. ESTADOS DE PEDIDO (Required catalog)
 PRINT 'Inserting EstadoPedido...';
--- Reset identity to start from 1
-DBCC CHECKIDENT ('EstadoPedido', RESEED, 0);
 INSERT INTO EstadoPedido (nombre, descripcion) VALUES
 ('Pendiente', 'Pedido pendiente de confirmacion por el proveedor'),
 ('En Proceso', 'Pedido confirmado y en proceso de preparacion'),

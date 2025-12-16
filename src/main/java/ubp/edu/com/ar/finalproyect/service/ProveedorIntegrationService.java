@@ -410,8 +410,11 @@ public class ProveedorIntegrationService {
                             productoProveedor.getImage(),
                             10,
                             30,
-                            0
+                            0,
+                            2
+
                     );
+                    p.setEstadoId(2); // Estado 2 = Agotado (no tiene stock aún)
                     Producto saved = productoRepository.save(p);
                 }
 
@@ -420,7 +423,6 @@ public class ProveedorIntegrationService {
                     mapping.setCodigoBarra(productoId);
                     mapping.setIdProveedor(proveedorId);
                     mapping.setCodigoBarraProveedor(productoId);
-                    mapping.setEstado(1);
                     productoProveedorRepository.assign(mapping);
                     logger.info("Created ProductoProveedor mapping: internal={}",
                             productoId);

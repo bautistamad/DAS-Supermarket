@@ -12,11 +12,13 @@ public class Producto {
     private Integer maxStock;
     private Integer actualStock;
 
-    // Fields from ProductoProveedor (only populated when querying by provider)
-    private LocalDateTime updateDate;
+    // Estado del Producto (desde tabla Producto)
     private Integer estadoId;
     private String estadoNombre;
     private String estadoDescripcion;
+
+    // Fields from ProductoProveedor (only populated when querying by provider)
+    private LocalDateTime updateDate;
 
     // Fields from HistorialPrecio
     private List<HistorialPrecio> precios;
@@ -46,7 +48,7 @@ public class Producto {
     }
 
     public Producto(Integer codigoBarra, String nombre, String imagen,
-                    Integer minStock, Integer maxStock, Integer actualStock) {
+                    Integer minStock, Integer maxStock, Integer actualStock, Integer estadoId) {
         this.codigoBarra = codigoBarra;
         this.nombre = nombre;
         this.imagen = imagen;
@@ -54,6 +56,7 @@ public class Producto {
         this.maxStock = maxStock;
         this.actualStock = actualStock;
         this.precios = null;
+        this.estadoId = estadoId;
     }
 
     public boolean needsRestock(Integer currentStock) {

@@ -142,9 +142,19 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
-    FROM Producto
-    ORDER BY nombre;
+    SELECT
+        p.codigoBarra,
+        p.nombre,
+        p.imagen,
+        p.stockMinimo,
+        p.stockMaximo,
+        p.stockActual,
+        p.estado,
+        ep.nombre AS estadoNombre,
+        ep.descripcion AS estadoDescripcion
+    FROM Producto p
+    LEFT JOIN EstadoProducto ep ON p.estado = ep.id
+    ORDER BY p.nombre;
 END
 go
 
@@ -173,9 +183,10 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
-    FROM Producto
-    WHERE codigoBarra = @codigoBarra;
+    SELECT p.codigoBarra, p.nombre, p.imagen, p.stockMinimo, p.stockMaximo, p.stockActual, p.estado, ep.nombre AS estadoNombre, ep.descripcion AS estadoDescripcion
+    FROM Producto p
+    LEFT JOIN EstadoProducto ep ON p.estado = ep.id
+    WHERE p.codigoBarra = @codigoBarra;
 END
 go
 
@@ -220,31 +231,31 @@ BEGIN
 BEGIN
         RAISERROR('No se puede eliminar: El proveedor tiene pedidos en curso (no finalizados).', 16, 1);
         RETURN;
-END
+    END
 
-BEGIN TRANSACTION;
-BEGIN TRY
+    BEGIN TRANSACTION;
+    BEGIN TRY
 
-DELETE FROM ProductoProveedor
-WHERE idProveedor = @id;
-
-
-DELETE FROM Pedido
-WHERE proveedor = @id;
+    DELETE FROM ProductoProveedor
+    WHERE idProveedor = @id;
 
 
-DELETE FROM Proveedor
-WHERE id = @id;
+    DELETE FROM Pedido
+    WHERE proveedor = @id;
 
-COMMIT TRANSACTION;
-PRINT 'Proveedor y todo su historial de pedidos han sido eliminados permanentemente.';
 
-END TRY
-BEGIN CATCH
-ROLLBACK TRANSACTION;
-        -- Relanzar el error para que la aplicación lo detecte
-        THROW;
-END CATCH
+    DELETE FROM Proveedor
+    WHERE id = @id;
+
+    COMMIT TRANSACTION;
+    PRINT 'Proveedor y todo su historial de pedidos han sido eliminados permanentemente.';
+
+    END TRY
+    BEGIN CATCH
+    ROLLBACK TRANSACTION;
+            -- Relanzar el error para que la aplicación lo detecte
+            THROW;
+    END CATCH
 END
 GO
 
@@ -289,14 +300,13 @@ BEGIN
         p.stockMaximo,
         p.stockActual,
         pp.fechaActualizacion,
-        pp.estado,
+        p.estado,
         ep.nombre AS estadoNombre,
         ep.descripcion AS estadoDescripcion
     FROM ProductoProveedor pp
-             INNER JOIN Producto p ON pp.codigoBarra = p.codigoBarra -- Corregido: Asumí que la columna era codigoBarra, no codigoProducto
-             LEFT JOIN EstadoProducto ep ON pp.estado = ep.id
+             INNER JOIN Producto p ON pp.codigoBarra = p.codigoBarra
+             LEFT JOIN EstadoProducto ep ON p.estado = ep.id
     WHERE pp.idProveedor = @idProveedor
---       AND pp.estado = 1 Only active productos (estado = 1)
     ORDER BY p.nombre;
 END
 go
@@ -336,9 +346,10 @@ BEGIN
         END
 
     -- Return the saved producto
-    SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
-    FROM Producto
-    WHERE codigoBarra = @codigoBarra;
+    SELECT p.codigoBarra, p.nombre, p.imagen, p.stockMinimo, p.stockMaximo, p.stockActual, p.estado, ep.nombre AS estadoNombre, ep.descripcion AS estadoDescripcion
+    FROM Producto p
+    LEFT JOIN EstadoProducto ep ON p.estado = ep.id
+    WHERE p.codigoBarra = @codigoBarra;
 END
 go
 
@@ -380,9 +391,10 @@ BEGIN
     WHERE codigoBarra = @codigoBarra;
 
     -- Return the updated producto
-    SELECT codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual
-    FROM Producto
-    WHERE codigoBarra = @codigoBarra;
+    SELECT p.codigoBarra, p.nombre, p.imagen, p.stockMinimo, p.stockMaximo, p.stockActual, p.estado, ep.nombre AS estadoNombre, ep.descripcion AS estadoDescripcion
+    FROM Producto p
+    LEFT JOIN EstadoProducto ep ON p.estado = ep.id
+    WHERE p.codigoBarra = @codigoBarra;
 END
 go
 
@@ -438,8 +450,7 @@ go
 CREATE OR ALTER PROCEDURE sp_assign_product_to_provider
     @idProveedor INT,
     @codigoProducto INT,
-    @codigoBarraProveedor INT,
-    @estado INT = 1
+    @codigoBarraProveedor INT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -466,7 +477,6 @@ BEGIN
             -- UPDATE existing relationship
             UPDATE ProductoProveedor
             SET fechaActualizacion = GETDATE(),
-                estado = @estado,
                 codigoBarraProveedor = @codigoBarraProveedor
             WHERE idProveedor = @idProveedor
               AND codigoBarra = @codigoProducto;
@@ -476,14 +486,14 @@ BEGIN
     ELSE
         BEGIN
             -- INSERT new relationship
-            INSERT INTO ProductoProveedor (idProveedor, codigoBarra, codigoBarraProveedor, fechaActualizacion, estado)
-            VALUES (@idProveedor, @codigoProducto, @codigoBarraProveedor, GETDATE(), @estado);
+            INSERT INTO ProductoProveedor (idProveedor, codigoBarra, codigoBarraProveedor, fechaActualizacion)
+            VALUES (@idProveedor, @codigoProducto, @codigoBarraProveedor, GETDATE());
 
             PRINT 'Relationship created.';
         END
 
     -- Return the relationship with details
-    SELECT pp.idProveedor, pp.codigoBarra, pp.codigoBarraProveedor, pp.fechaActualizacion, pp.estado,
+    SELECT pp.idProveedor, pp.codigoBarra, pp.codigoBarraProveedor, pp.fechaActualizacion,
            p.nombre AS productoNombre,
            pr.nombre AS proveedorNombre
     FROM ProductoProveedor pp
@@ -1199,16 +1209,20 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
-        codigoBarra,
-        nombre,
-        imagen,
-        stockMinimo,
-        stockMaximo,
-        stockActual
-    FROM Producto
-    WHERE stockActual <= stockMinimo
-      AND stockMaximo > stockActual  -- Only products that can be restocked
-    ORDER BY stockActual ASC;  -- Lowest stock first
+        p.codigoBarra,
+        p.nombre,
+        p.imagen,
+        p.stockMinimo,
+        p.stockMaximo,
+        p.stockActual,
+        p.estado,
+        ep.nombre AS estadoNombre,
+        ep.descripcion AS estadoDescripcion
+    FROM Producto p
+    LEFT JOIN EstadoProducto ep ON p.estado = ep.id
+    WHERE p.stockActual <= p.stockMinimo
+      AND p.stockMaximo > p.stockActual  -- Only products that can be restocked
+    ORDER BY p.stockActual ASC;  -- Lowest stock first
 END
 GO
 
@@ -1227,7 +1241,6 @@ BEGIN
         pp.idProveedor,
         pp.codigoBarra,
         pp.codigoBarraProveedor,
-        pp.estado,
         pp.fechaActualizacion,
         p.nombre AS productoNombre,
         pr.nombre AS proveedorNombre

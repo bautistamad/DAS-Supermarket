@@ -26,8 +26,7 @@ public class ProductoProveedorRepositoryImpl implements ProductoProveedorReposit
         SqlParameterSource in = new MapSqlParameterSource()
                 .addValue("idProveedor", assignment.getIdProveedor())
                 .addValue("codigoProducto", assignment.getCodigoBarra())
-                .addValue("codigoBarraProveedor", assignment.getCodigoBarraProveedor())
-                .addValue("estado", assignment.getEstado());
+                .addValue("codigoBarraProveedor", assignment.getCodigoBarraProveedor());
 
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("sp_assign_product_to_provider")
@@ -89,7 +88,6 @@ public class ProductoProveedorRepositoryImpl implements ProductoProveedorReposit
         domain.setIdProveedor(entity.getIdProveedor());
         domain.setCodigoBarra(entity.getCodigoBarra());
         domain.setCodigoBarraProveedor(entity.getCodigoBarraProveedor());
-        domain.setEstado(entity.getEstado());
         domain.setFechaActualizacion(entity.getFechaActualizacion());
         domain.setProductoNombre(entity.getProductoNombre());
         domain.setProveedorNombre(entity.getProveedorNombre());

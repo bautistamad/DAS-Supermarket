@@ -12,9 +12,13 @@ public class ProductoEntity {
     private Integer stockMaximo;
     private Integer stockActual;
 
-    // Producto State Fields
-    private LocalDateTime fechaActualizacion;
+    // Estado del Producto (desde tabla Producto)
     private Integer estado;
+    private String estadoNombre;
+    private String estadoDescripcion;
+
+    // Campos de relación ProductoProveedor
+    private LocalDateTime fechaActualizacion;
 
     public String getEstadoNombre() {
         return estadoNombre;
@@ -47,9 +51,6 @@ public class ProductoEntity {
     public void setEstadoDescripcion(String estadoDescripcion) {
         this.estadoDescripcion = estadoDescripcion;
     }
-
-    private String estadoNombre;
-    private String estadoDescripcion;
 
     public ProductoEntity() {};
 

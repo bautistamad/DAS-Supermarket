@@ -31,7 +31,11 @@ CREATE TABLE Producto (
                           imagen NVARCHAR(500) NULL,
                           stockMinimo INT NOT NULL DEFAULT 0,
                           stockMaximo INT NOT NULL DEFAULT 0,
-                          stockActual INT NOT NULL DEFAULT 0
+                          stockActual INT NOT NULL DEFAULT 0,
+                          estado INT NOT NULL,
+
+                          CONSTRAINT FK_Producto_EstadoProducto
+                              FOREIGN KEY (estado) REFERENCES EstadoProducto(id)
 );
 GO
 
@@ -39,17 +43,13 @@ CREATE TABLE ProductoProveedor (
                                 idProveedor INT NOT NULL,
                                 codigoBarra INT NOT NULL,
                                 fechaActualizacion DATETIME NOT NULL DEFAULT GETDATE(),
-                                estado INT NOT NULL DEFAULT 1,
-                                codigoBarraProveedor INT NOT NULL
+                                codigoBarraProveedor INT NOT NULL,
     -- Foreign Keys
                                    CONSTRAINT FK_ProductoProveedor_Producto
                                        FOREIGN KEY (codigoBarra) REFERENCES Producto(codigoBarra),
 
                                    CONSTRAINT FK_ProductoProveedor_Proveedor
                                        FOREIGN KEY (idProveedor) REFERENCES Proveedor(id),
-
-                                   CONSTRAINT FK_ProductoProveedor_EstadoProducto
-                                       FOREIGN KEY (estado) REFERENCES EstadoProducto(id),
 
                                    CONSTRAINT PK_ProductoProveedor
                                        PRIMARY KEY (codigoBarra, idProveedor)

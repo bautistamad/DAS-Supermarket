@@ -2,6 +2,7 @@ package ubp.edu.com.ar.finalproyect.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.domain.ProductoProveedor;
 import ubp.edu.com.ar.finalproyect.exception.ProductoNotFoundException;
 import ubp.edu.com.ar.finalproyect.exception.ProveedorNotFoundException;
@@ -28,7 +29,7 @@ public class ProductoProveedorService {
     public ProductoProveedor assignProductToProvider(Integer codigoBarra, Integer idProveedor,
                                                      Integer codigoBarraProveedor, Integer estado) {
         // Validate producto exists
-        productoRepository.findByBarCode(codigoBarra)
+        Producto producto = productoRepository.findByBarCode(codigoBarra)
                 .orElseThrow(() -> new ProductoNotFoundException(codigoBarra));
 
         // Validate proveedor exists
@@ -40,12 +41,15 @@ public class ProductoProveedorService {
             throw new IllegalArgumentException("Estado must be between 1 and 3");
         }
 
+        // Set product estado to 2 (Agotado) when assigning to provider
+        producto.setEstadoId(2);
+        productoRepository.save(producto);
+
         // Create assignment
         ProductoProveedor assignment = new ProductoProveedor(
                 idProveedor,
                 codigoBarra,
-                codigoBarraProveedor,
-                estado
+                codigoBarraProveedor
         );
 
         return productoProveedorRepository.assign(assignment);

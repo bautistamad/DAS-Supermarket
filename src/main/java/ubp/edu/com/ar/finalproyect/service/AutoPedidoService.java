@@ -9,9 +9,7 @@ import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.domain.ProductoProveedor;
 import ubp.edu.com.ar.finalproyect.domain.Proveedor;
 import ubp.edu.com.ar.finalproyect.domain.subdomain.AsignacionProducto;
-import ubp.edu.com.ar.finalproyect.domain.subdomain.EstadisticasGeneracion;
 import ubp.edu.com.ar.finalproyect.domain.subdomain.OfertaProveedor;
-import ubp.edu.com.ar.finalproyect.domain.subdomain.PedidoResumen;
 import ubp.edu.com.ar.finalproyect.port.HistorialPrecioRepository;
 import ubp.edu.com.ar.finalproyect.port.ProductoProveedorRepository;
 import ubp.edu.com.ar.finalproyect.port.ProductoRepository;
@@ -134,19 +132,17 @@ public class AutoPedidoService {
 
     @Transactional
     public Map<String, Object> generarPedidoAutomaticoOptimizado() {
-        EstadisticasGeneracion estadisticas = new EstadisticasGeneracion();
 
         org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
 
         logger.info("=== INICIO: Generación de pedido automático optimizado ===");
 
         List<Producto> productosBajos = productoRepository.findProductosBajoStock();
-        estadisticas.setTotalProductosProcesados(productosBajos.size());
         logger.info("Productos con stock bajo encontrados: {}", productosBajos.size());
 
         if (productosBajos.isEmpty()) {
             logger.warn("No hay productos con stock bajo");
-            return buildSuccessResponse("No hay productos con stock bajo", List.of(), List.of(), estadisticas);
+            return buildSuccessResponse("No hay productos con stock bajo", List.of());
         }
 
         List<Proveedor> proveedoresActivos = proveedorRepository.findAll().stream()
@@ -156,7 +152,7 @@ public class AutoPedidoService {
 
         if (proveedoresActivos.isEmpty()) {
             logger.error("No hay proveedores activos disponibles");
-            return buildErrorResponse("No hay proveedores activos disponibles", estadisticas);
+            return buildErrorResponse("No hay proveedores activos disponibles");
         }
 
         logger.info("Sincronizando precios de proveedores...");
@@ -164,24 +160,22 @@ public class AutoPedidoService {
 
         logger.info("Asignando productos por mejor precio...");
         Map<Integer, List<AsignacionProducto>> pedidosTemporales =
-                asignarProductosPorMejorPrecio(productosBajos, proveedoresActivos, estadisticas);
+                asignarProductosPorMejorPrecio(productosBajos, proveedoresActivos);
         logger.info("Pedidos temporales generados para {} proveedores", pedidosTemporales.size());
 
         if (pedidosTemporales.isEmpty()) {
             logger.error("Ningún proveedor puede suplir los productos necesarios");
-            return buildErrorResponse("Ningún proveedor puede suplir los productos necesarios", estadisticas);
+            return buildErrorResponse("Ningún proveedor puede suplir los productos necesarios");
         }
 
         logger.info("Consolidando pedidos unitarios...");
-        consolidarPedidosUnitarios(pedidosTemporales, proveedoresActivos, estadisticas);
+        consolidarPedidosUnitarios(pedidosTemporales, proveedoresActivos);
         logger.info("Después de consolidar, quedan {} proveedores en pedidosTemporales", pedidosTemporales.size());
 
         logger.info("Creando pedidos finales...");
-        List<PedidoResumen> ordenesGeneradas = crearPedidosFinales(pedidosTemporales, proveedoresActivos, estadisticas);
-        logger.info("Pedidos creados: {}", ordenesGeneradas.size());
 
         logger.info("=== FIN: Generación exitosa ===");
-        return buildSuccessResponse("Pedidos generados exitosamente", ordenesGeneradas, List.of(), estadisticas);
+        return buildSuccessResponse("Pedidos generados exitosamente", List.of());
     }
 
     private void sincronizarPreciosProveedores(List<Proveedor> proveedoresActivos) {
@@ -196,8 +190,8 @@ public class AutoPedidoService {
 
     private Map<Integer, List<AsignacionProducto>> asignarProductosPorMejorPrecio(
             List<Producto> productosBajos,
-            List<Proveedor> proveedoresActivos,
-            EstadisticasGeneracion estadisticas) {
+            List<Proveedor> proveedoresActivos
+            ) {
 
         Map<Integer, List<AsignacionProducto>> pedidosTemporales = new HashMap<>();
 
@@ -205,7 +199,6 @@ public class AutoPedidoService {
             List<OfertaProveedor> ofertas = buscarOfertasProducto(producto, proveedoresActivos);
 
             if (ofertas.isEmpty()) {
-                estadisticas.incrementarProductosNoAsignados();
                 continue;
             }
 
@@ -227,8 +220,6 @@ public class AutoPedidoService {
             pedidosTemporales
                     .computeIfAbsent(mejorOferta.getProveedorId(), k -> new ArrayList<>())
                     .add(asignacion);
-
-            estadisticas.incrementarProductosAsignados();
         }
 
         return pedidosTemporales;
@@ -246,12 +237,6 @@ public class AutoPedidoService {
 
             if (productoProveedor == null) {
                 logger.debug("  - Proveedor {} NO tiene el producto asignado", proveedor.getName());
-                continue;
-            }
-
-            if (productoProveedor.getEstado() != 1) {
-                logger.debug("  - Proveedor {} tiene el producto pero estado != 1 (estado={})",
-                    proveedor.getName(), productoProveedor.getEstado());
                 continue;
             }
 
@@ -296,8 +281,8 @@ public class AutoPedidoService {
 
     private void consolidarPedidosUnitarios(
             Map<Integer, List<AsignacionProducto>> pedidosTemporales,
-            List<Proveedor> proveedoresActivos,
-            EstadisticasGeneracion estadisticas) {
+            List<Proveedor> proveedoresActivos
+            ) {
 
         org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
         logger.info("  Iniciando consolidación. Total proveedores antes: {}", pedidosTemporales.size());
@@ -317,7 +302,6 @@ public class AutoPedidoService {
 
         if (proveedoresUnitarios.isEmpty() || proveedoresGrandes.isEmpty()) {
             logger.info("  No se puede consolidar (falta unitarios o grandes). Manteniendo todos los pedidos.");
-            estadisticas.setPedidosUnitariosInevitables(proveedoresUnitarios.size());
             return;
         }
 
@@ -334,7 +318,6 @@ public class AutoPedidoService {
             );
 
             if (mejorProveedorGrandeId == null) {
-                estadisticas.incrementarPedidosUnitariosInevitables();
                 continue;
             }
 
@@ -344,7 +327,6 @@ public class AutoPedidoService {
             );
 
             if (precioGrande == null) {
-                estadisticas.incrementarPedidosUnitariosInevitables();
                 continue;
             }
 
@@ -354,7 +336,6 @@ public class AutoPedidoService {
             );
 
             if (mappingGrande == null) {
-                estadisticas.incrementarPedidosUnitariosInevitables();
                 continue;
             }
 
@@ -368,7 +349,6 @@ public class AutoPedidoService {
 
             pedidosTemporales.get(mejorProveedorGrandeId).add(nuevaAsignacion);
             proveedoresAEliminar.add(proveedorUnitarioId);
-            estadisticas.incrementarPedidosConsolidados();
         }
 
         for (Integer proveedorId : proveedoresAEliminar) {
@@ -391,7 +371,7 @@ public class AutoPedidoService {
             ProductoProveedor productoProveedor =
                     productoProveedorRepository.findByProveedorAndProducto(proveedorId, codigoBarra);
 
-            if (productoProveedor == null || productoProveedor.getEstado() != 1) {
+            if (productoProveedor == null) {
                 continue;
             }
 
@@ -411,13 +391,13 @@ public class AutoPedidoService {
         return mejorProveedorId;
     }
 
-    private List<PedidoResumen> crearPedidosFinales(
+    private void crearPedidosFinales(
             Map<Integer, List<AsignacionProducto>> pedidosTemporales,
-            List<Proveedor> proveedoresActivos,
-            EstadisticasGeneracion estadisticas) {
+            List<Proveedor> proveedoresActivos
+             ) {
 
         org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
-        List<PedidoResumen> ordenesGeneradas = new ArrayList<>();
+
 
         logger.info("  crearPedidosFinales: Recibido map con {} entradas", pedidosTemporales.size());
         logger.info("  crearPedidosFinales: entrySet size = {}", pedidosTemporales.entrySet().size());
@@ -472,24 +452,13 @@ public class AutoPedidoService {
                 Pedido pedidoCreado = pedidoService.createPedido(nuevoPedido);
                 logger.info("Pedido creado exitosamente con ID: {}", pedidoCreado.getId());
 
-                PedidoResumen resumen = new PedidoResumen();
-                resumen.setPedidoId(pedidoCreado.getId());
-                resumen.setProveedorNombre(proveedorNombre);
-                resumen.setProveedorId(proveedorId);
-                resumen.setCantidadProductos(asignaciones.size());
-                resumen.setCostoTotal(costoTotal);
-                resumen.setRatingProveedor(rating);
-
-                ordenesGeneradas.add(resumen);
-                estadisticas.incrementarTotalPedidosCreados();
 
             } catch (Exception e) {
                 logger.error("ERROR creando pedido para proveedor {}: {}", proveedorNombre, e.getMessage(), e);
             }
         }
 
-        estadisticas.setTotalProveedoresUtilizados(ordenesGeneradas.size());
-        return ordenesGeneradas;
+        return;
     }
 
     private String obtenerNombreProveedor(Integer proveedorId, List<Proveedor> proveedoresActivos) {
@@ -502,26 +471,21 @@ public class AutoPedidoService {
 
     private Map<String, Object> buildSuccessResponse(
             String mensaje,
-            List<PedidoResumen> ordenesGeneradas,
-            List<Map<String, Object>> productosSinStock,
-            EstadisticasGeneracion estadisticas) {
+            List<Map<String, Object>> productosSinStock
+            ) {
 
         Map<String, Object> response = new HashMap<>();
         response.put("exito", true);
         response.put("mensaje", mensaje);
-        response.put("ordenesGeneradas", ordenesGeneradas);
         response.put("productosSinStock", productosSinStock);
-        response.put("estadisticas", estadisticas.toMap());
         return response;
     }
 
-    private Map<String, Object> buildErrorResponse(String mensaje, EstadisticasGeneracion estadisticas) {
+    private Map<String, Object> buildErrorResponse(String mensaje) {
         Map<String, Object> response = new HashMap<>();
         response.put("exito", false);
         response.put("mensaje", mensaje);
-        response.put("ordenesGeneradas", List.of());
         response.put("productosSinStock", List.of());
-        response.put("estadisticas", estadisticas.toMap());
         return response;
     }
 
@@ -532,7 +496,7 @@ public class AutoPedidoService {
             var productoProveedor = productoProveedorRepository.findByProveedorAndProducto(
                     proveedor.getId(), producto.getCodigoBarra());
 
-            if (productoProveedor == null || productoProveedor.getEstado() != 1) {
+            if (productoProveedor == null) {
                 return new ArrayList<>();
             }
 

@@ -31,6 +31,15 @@ public class ProductoService {
             throw new IllegalArgumentException("Producto name cannot be null or empty");
         }
 
+        // Set estado based on stock: if no stock (0), estado 2 (Agotado), otherwise 1 (Disponible)
+        if (producto.getEstadoId() == null) {
+            if (producto.getActualStock() == null || producto.getActualStock() == 0) {
+                producto.setEstadoId(2); // Agotado
+            } else {
+                producto.setEstadoId(1); // Disponible
+            }
+        }
+
         return repository.save(producto);
     }
 
