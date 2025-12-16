@@ -19,6 +19,7 @@ import ubp.edu.com.ar.finalproyect.port.ProveedorRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class ProveedorIntegrationService {
@@ -304,14 +305,14 @@ public class ProveedorIntegrationService {
      * Fetch rating scale from provider's API
      * Returns list of scale values (e.g., "Excelente", "Bueno", "Regular")
      */
-    public List<ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion> fetchEscalaFromProveedor(Integer proveedorId) {
+    public List<EscalaDefinicion> fetchEscalaFromProveedor(Integer proveedorId) {
         logger.info("Fetching rating scale for provider ID: {}", proveedorId);
 
         Proveedor proveedor = getProveedor(proveedorId);
 
         try {
             ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
-            List<ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion> escalas = adapter.getEscala(
+            List<EscalaDefinicion> escalas = adapter.getEscala(
                     proveedor.getApiEndpoint(),
                     proveedor.getClientId(),
                     proveedor.getApiKey()
@@ -411,5 +412,72 @@ public class ProveedorIntegrationService {
             .orElseThrow(() -> new ProveedorNotFoundException(
                 "Provider with ID " + proveedorId + " not found"
             ));
+    }
+
+    public Map<String, Integer> syncProductosFromProveedorSeleccionados(Integer proveedorId, List<Integer> codigosBarraProveedorSeleccionados) {
+        Map<String, Integer> result = new HashMap<>();
+        result.put("productosCreados", 0);
+        result.put("productosAsociados", 0);
+        result.put("errors", 0);
+
+        List<Producto> productosProveedor = getProductosDisponiblesFromProveedor(proveedorId);
+
+        List<Producto> productosSeleccionados = productosProveedor.stream()
+                .filter(p -> codigosBarraProveedorSeleccionados.contains(p.getCodigoBarra()))
+                .toList();
+
+        logger.info("Filtered {} products out of {}",
+                productosSeleccionados.size(), productosProveedor.size());
+
+        for (Producto productoProveedor : productosSeleccionados) {
+            try {
+                Integer productoId = productoProveedor.getCodigoBarra();
+
+                Optional<Producto> productoExistente =  productoRepository.findByBarCode(productoProveedor.getCodigoBarra());
+                if(productoExistente.isEmpty()) {
+                    Producto p = new Producto(
+                            productoProveedor.getCodigoBarra(),
+                            productoProveedor.getNombre(),
+                            productoProveedor.getImage(),
+                            10,
+                            30,
+                            0
+                    );
+                    Producto saved = productoRepository.save(p);
+                }
+
+                ProductoProveedor existingMapping = productoProveedorRepository.findByProveedorAndProducto(proveedorId, productoId);
+                    ProductoProveedor mapping = new ProductoProveedor();
+                    mapping.setCodigoBarra(productoId);
+                    mapping.setIdProveedor(proveedorId);
+                    mapping.setCodigoBarraProveedor(productoId);
+                    mapping.setEstado(1);
+                    productoProveedorRepository.assign(mapping);
+                    logger.info("Created ProductoProveedor mapping: internal={}",
+                            productoId);
+                    result.put("productosAsociados", result.get("productosAsociados") + 1);
+
+                Float precio = extractPrecio(productoProveedor);
+                if (precio != null) {
+                    historialPrecioRepository.syncPrecio(
+                            productoId,
+                            precio,
+                            proveedorId
+                    );
+                    logger.info("Synced price for product {}: ${}", productoProveedor.getNombre(), precio);
+                }
+
+            } catch (Exception e) {
+                logger.error("Error syncing product {}: {}",
+                        productoProveedor.getNombre(), e.getMessage(), e);
+                result.put("errors", result.get("errors") + 1);
+            }
+
+        }
+        logger.info("Sync completed. Created: {}, Associated: {}, Errors: {}",
+                result.get("productosCreados"), result.get("productosAsociados"), result.get("errors"));
+
+        return result;
+
     }
 }

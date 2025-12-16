@@ -22,10 +22,6 @@ public class EscalaService {
     @Autowired
     private EscalaRepository escalaRepository;
 
-    /**
-     * Get all scale mappings for a provider
-     * Used by frontend to display scales for mapping
-     */
     @Transactional(readOnly = true)
     public List<Escala> getMappingsByProveedor(Integer proveedorId) {
         logger.info("Getting scale mappings for provider: {}", proveedorId);
@@ -34,10 +30,7 @@ public class EscalaService {
         return escalas;
     }
 
-    /**
-     * Save scale mappings from frontend
-     * Updates escalaInt values for each scale
-     */
+
     @Transactional
     public List<Escala> saveMappings(List<Escala> escalas) {
         logger.info("Saving {} scale mappings", escalas.size());

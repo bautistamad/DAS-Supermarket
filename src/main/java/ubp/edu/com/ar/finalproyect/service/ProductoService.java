@@ -20,7 +20,6 @@ public class ProductoService {
     }
 
     public Producto createProducto(Producto producto) {
-        // Validate input
 
         if (producto == null) {
             throw new IllegalArgumentException("Producto cannot be null");

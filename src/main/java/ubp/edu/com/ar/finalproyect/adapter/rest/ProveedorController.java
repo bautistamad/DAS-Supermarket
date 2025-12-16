@@ -9,6 +9,7 @@ import ubp.edu.com.ar.finalproyect.domain.Proveedor;
 import ubp.edu.com.ar.finalproyect.service.ProveedorIntegrationService;
 import ubp.edu.com.ar.finalproyect.service.ProveedorService;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -82,5 +83,28 @@ public class ProveedorController {
         }
         Proveedor updated = proveedorService.toggleActivo(id, activo);
         return ResponseEntity.ok(updated);
+    }
+
+    @PostMapping("/{id}/sync-productos")
+    public ResponseEntity<Map<String, Object>> syncProductos(
+            @PathVariable Integer id,
+            @RequestBody Map<String, List<Integer>> request
+    ) {
+
+        List<Integer> codigosBarraProveedor = request.get("codigosBarraProveedor");
+
+        if (codigosBarraProveedor == null || codigosBarraProveedor.isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", "codigosBarraProveedor cannot be empty")
+            );
+        }
+
+        Map<String, Integer> result = integrationService.syncProductosFromProveedorSeleccionados(id, codigosBarraProveedor);
+
+        Map<String, Object> response = new HashMap<>(result);
+        response.put("proveedorId", id);
+        response.put("total", codigosBarraProveedor.size());
+
+        return ResponseEntity.ok(response);
     }
 }

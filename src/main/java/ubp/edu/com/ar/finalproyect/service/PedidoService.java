@@ -178,10 +178,7 @@ public class PedidoService {
         return repository.findProductsByPedidoId(pedidoId);
     }
 
-    /**
-     * Query order status from provider and update local database
-     * Useful for syncing order status (En Proceso, Enviado, Entregado, etc.)
-     */
+
     @Transactional
     public Pedido consultarEstadoPedido(Integer pedidoId) {
         if (pedidoId == null) {
@@ -190,14 +187,11 @@ public class PedidoService {
 
         logger.info("Querying status for order {}", pedidoId);
 
-        // Get the existing order
         Pedido pedido = repository.findById(pedidoId)
                 .orElseThrow(() -> new PedidoNotFoundException(pedidoId));
 
-        // Query status from provider
         Pedido estadoProveedor = integrationService.consultarEstadoPedido(
                 pedido.getProveedorId(),
-
                 pedidoId
         );
 
@@ -211,7 +205,6 @@ public class PedidoService {
         logger.info("Provider returned status for order {}: {}",
                 pedidoId, estadoProveedor.getEstadoNombre());
 
-        // Map provider status to our internal estado ID
         Integer nuevoEstadoId = mapProviderStatusToEstadoId(estadoProveedor.getEstadoNombre());
 
         if (nuevoEstadoId != null && !nuevoEstadoId.equals(pedido.getEstadoId())) {

@@ -1,9 +1,5 @@
 package ubp.edu.com.ar.finalproyect.domain;
 
-/**
- * Represents a rating scale definition from an external provider
- * Example: {"valor": "Excelente", "descripcion": "Servicio excepcional"}
- */
 public class EscalaDefinicion {
 
     private String valor;         // Scale value from provider (e.g., "Excelente", "Bueno", "Regular")
