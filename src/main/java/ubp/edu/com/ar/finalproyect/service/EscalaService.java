@@ -11,9 +11,7 @@ import ubp.edu.com.ar.finalproyect.port.EscalaRepository;
 
 import java.util.List;
 
-/**
- * Service for managing rating scale mappings between providers and internal scale
- */
+
 @Service
 public class EscalaService {
 

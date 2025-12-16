@@ -22,9 +22,6 @@ public class UsuarioService {
         this.repository = repository;
     }
 
-    /**
-     * Crea un nuevo usuario con password hasheado
-     */
     public Usuario createUsuario(String username, String email, String password) {
         // Validar inputs
         if (username == null || username.trim().isEmpty()) {
@@ -84,16 +81,11 @@ public class UsuarioService {
         return usuario;
     }
 
-    /**
-     * Busca usuario por username
-     */
+
     public Optional<Usuario> getUsuarioByUsername(String username) {
         return repository.findByUsername(username);
     }
 
-    /**
-     * Lista todos los usuarios (para admin futuro)
-     */
     public List<Usuario> getAllUsuarios() {
         return repository.findAll();
     }

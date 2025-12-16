@@ -18,10 +18,5 @@ public interface ProductoRepository {
 
     List<Producto> findByProviderId(Integer providerId);
 
-    /**
-     * Find products with stock below minimum (actualStock <= stockMinimo)
-     * Used for automatic order generation
-     * @return List of products that need restocking
-     */
     List<Producto> findProductosBajoStock();
 }

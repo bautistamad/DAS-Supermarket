@@ -88,11 +88,7 @@ public class Httpful {
         return this;
     }
 
-    /**
-     * POST request with JSON wrapping
-     * Wraps the body object in a JSON object with the specified key
-     * Example: postWrapped("Pedido", pedidoObj) -> {"Pedido": {...}}
-     */
+
     public Httpful postWrapped(String wrapperKey, Object body) {
         JsonObject wrapped = new JsonObject();
         wrapped.add(wrapperKey, gson.toJsonTree(body));
@@ -101,11 +97,6 @@ public class Httpful {
         return this;
     }
 
-    /**
-     * PUT request with JSON wrapping
-     * Wraps the body object in a JSON object with the specified key
-     * Example: putWrapped("Pedido", pedidoObj) -> {"Pedido": {...}}
-     */
     public Httpful putWrapped(String wrapperKey, Object body) {
         JsonObject wrapped = new JsonObject();
         wrapped.add(wrapperKey, gson.toJsonTree(body));
@@ -122,11 +113,7 @@ public class Httpful {
         return executeRequest(responseType);
     }
 
-    /**
-     * Execute request and unwrap JSON response
-     * Extracts the value from the specified key in the JSON response
-     * Example: {"Pedido": {...}} with key "Pedido" -> returns the inner object
-     */
+
     public <T> T executeUnwrapped(String wrapperKey, Class<T> responseType) {
         Response response = sendRequest();
         try {
@@ -163,10 +150,7 @@ public class Httpful {
         }
     }
 
-    /**
-     * Execute request and unwrap JSON response (with Type support for generics)
-     * Extracts the value from the specified key in the JSON response
-     */
+
     public <T> T executeUnwrapped(String wrapperKey, Type responseType) {
         Response response = sendRequest();
         try {

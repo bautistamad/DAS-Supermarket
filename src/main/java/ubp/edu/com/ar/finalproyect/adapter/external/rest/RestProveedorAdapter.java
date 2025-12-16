@@ -67,7 +67,6 @@ public class RestProveedorAdapter implements ProveedorIntegration {
         try {
             logger.info("Fetching products from provider: {} (clientId: {})", apiEndpoint, clientId);
 
-            // Provider returns array directly: [{...}, {...}]
             ProductoProveedorDTO[] productosArray = new Httpful(apiEndpoint)
                     .path("/api/productos")
                     .addQueryParam("clientId", clientId)

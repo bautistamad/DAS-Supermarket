@@ -44,10 +44,6 @@ public class ProveedorIntegrationService {
         this.factory = factory;
     }
 
-    /**
-     * Check health for an existing provider (by ID)
-     * Fetches provider from database and validates connection
-     */
     public boolean checkProveedorHealth(Integer proveedorId) {
         logger.info("Checking health for provider ID: {}", proveedorId);
 
@@ -77,10 +73,6 @@ public class ProveedorIntegrationService {
         }
     }
 
-    /**
-     * Query order status from provider
-     * Returns current status of the order at the provider
-     */
     public Pedido consultarEstadoPedido(Integer proveedorId, Integer pedidoId) {
         logger.info("Querying status for order {} from provider ID: {}", pedidoId, proveedorId);
 
@@ -112,12 +104,6 @@ public class ProveedorIntegrationService {
         }
     }
 
-    /**
-     * Assign order to provider (create order in provider's system)
-     * @param proveedorId Provider ID
-     * @param pedido Order to assign with products
-     * @return Updated Pedido with provider confirmation or null if failed
-     */
     public Pedido asignarPedidoWithProveedor(Integer proveedorId, Pedido pedido) {
         logger.info("Attempting to assign order to provider ID: {}", proveedorId);
 
@@ -281,10 +267,7 @@ public class ProveedorIntegrationService {
         }
     }
 
-    /**
-     * Get available products from provider
-     * Returns list of products available at the provider for selection
-     */
+
     public List<Producto> getProductosDisponiblesFromProveedor(Integer proveedorId) {
         logger.info("Fetching available products from provider ID: {}", proveedorId);
 
@@ -301,10 +284,7 @@ public class ProveedorIntegrationService {
         return productos;
     }
 
-    /**
-     * Fetch rating scale from provider's API
-     * Returns list of scale values (e.g., "Excelente", "Bueno", "Regular")
-     */
+
     public List<EscalaDefinicion> fetchEscalaFromProveedor(Integer proveedorId) {
         logger.info("Fetching rating scale for provider ID: {}", proveedorId);
 
@@ -332,13 +312,7 @@ public class ProveedorIntegrationService {
         }
     }
 
-    /**
-     * Send order evaluation to provider
-     * @param proveedorId Provider ID
-     * @param pedidoId Order ID
-     * @param puntuacion Rating value in provider's scale
-     * @return true if evaluation was sent successfully, false otherwise
-     */
+
     public boolean enviarEvaluacionToProveedor(Integer proveedorId, Integer pedidoId, Integer puntuacion) {
         logger.info("Sending evaluation for order {} to provider ID: {} with rating: {}",
                 pedidoId, proveedorId, puntuacion);
@@ -370,12 +344,7 @@ public class ProveedorIntegrationService {
         }
     }
 
-    /**
-     * Estimate order price from provider
-     * @param proveedorId Provider ID
-     * @param pedido Order with products to estimate
-     * @return Map with estimation details (precioEstimadoTotal, fechaEstimada, productosJson) or null if failed
-     */
+
     public Map<String, Object> estimarPedidoWithProveedor(Integer proveedorId, Pedido pedido) {
         logger.info("Estimating order with provider ID: {}", proveedorId);
 

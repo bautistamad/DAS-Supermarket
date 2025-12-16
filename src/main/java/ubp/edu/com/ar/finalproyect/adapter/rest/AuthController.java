@@ -19,10 +19,6 @@ public class AuthController {
         this.usuarioService = usuarioService;
     }
 
-    /**
-     * POST /api/auth/login
-     * Valida credenciales y retorna datos del usuario
-     */
     @PostMapping("/login")
     public ResponseEntity<UsuarioResponse> login(@RequestBody LoginRequest request) {
         Usuario usuario = usuarioService.login(
@@ -34,10 +30,6 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * POST /api/auth/register
-     * Crea un nuevo usuario
-     */
     @PostMapping("/register")
     public ResponseEntity<UsuarioResponse> register(@RequestBody RegisterRequest request) {
         Usuario usuario = usuarioService.createUsuario(

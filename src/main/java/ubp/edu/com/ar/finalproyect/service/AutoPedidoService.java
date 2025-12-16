@@ -375,7 +375,7 @@ public class AutoPedidoService {
             pedidosTemporales.remove(proveedorId);
         }
 
-        logger.info("  Consolidación completada. Proveedores eliminados: {}, Proveedores restantes: {}",
+        logger.info("Consolidación completada. Proveedores eliminados: {}, Proveedores restantes: {}",
                 proveedoresAEliminar.size(), pedidosTemporales.size());
     }
 
@@ -465,7 +465,7 @@ public class AutoPedidoService {
                 nuevoPedido.setProveedorId(proveedorId);
                 nuevoPedido.setEstadoId(1);
                 nuevoPedido.setProductos(productos);
-                // Set estimated date to 7 days from now for automatic orders
+                // Set estimated date to 7 days from now for automatic orders // Modify getting request to provider
                 nuevoPedido.setFechaEstimada(java.time.LocalDateTime.now().plusDays(7));
 
                 logger.info("Llamando a pedidoService.createPedido...");

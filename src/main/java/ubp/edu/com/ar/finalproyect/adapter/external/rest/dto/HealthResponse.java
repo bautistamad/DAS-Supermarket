@@ -1,9 +1,6 @@
 package ubp.edu.com.ar.finalproyect.adapter.external.rest.dto;
 
-/**
- * DTO for health check response from provider
- * Matches provider API contract from specs
- */
+
 public class HealthResponse {
 
     private String status;   // "OK" or "KO"

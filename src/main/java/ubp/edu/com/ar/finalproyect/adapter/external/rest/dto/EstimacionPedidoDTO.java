@@ -4,10 +4,6 @@ import com.google.gson.annotations.SerializedName;
 
 import java.time.LocalDateTime;
 
-/**
- * DTO for provider's order estimation response
- * Maps provider's estimation endpoint response
- */
 public class EstimacionPedidoDTO {
 
     @SerializedName("fechaEstimada")

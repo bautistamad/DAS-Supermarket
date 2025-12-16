@@ -17,11 +17,7 @@ import java.net.URL;
 public class SoapClientFactory {
     private static final Logger logger = LoggerFactory.getLogger(SoapClientFactory.class);
 
-    /**
-     * Crea un cliente SOAP para el servicio de Pedidos
-     * @param endpointUrl URL del servicio SOAP (ej: http://localhost:8086/ws/pedidos)
-     * @return Cliente PedidoWS configurado
-     */
+
     public PedidoWS buildPedidoClient(String endpointUrl) {
         try {
             URL wsdlUrl = new URL(endpointUrl + "?wsdl");
@@ -37,11 +33,6 @@ public class SoapClientFactory {
         }
     }
 
-    /**
-     * Crea un cliente SOAP para el servicio de Productos
-     * @param endpointUrl URL del servicio SOAP (ej: http://localhost:8086/ws/productos)
-     * @return Cliente ProductoWS configurado
-     */
     public ProductoWS buildProductoClient(String endpointUrl) {
         try {
             URL wsdlUrl = new URL(endpointUrl + "?wsdl");
@@ -57,11 +48,7 @@ public class SoapClientFactory {
         }
     }
 
-    /**
-     * Crea un cliente SOAP para el servicio de Utils
-     * @param endpointUrl URL del servicio SOAP (ej: http://localhost:8086/ws/utils)
-     * @return Cliente UtilsWS configurado
-     */
+
     public UtilsWS buildUtilsClient(String endpointUrl) {
         try {
             URL wsdlUrl = new URL(endpointUrl + "?wsdl");

@@ -38,11 +38,7 @@ public class EscalaController {
         return ResponseEntity.ok(escalas);
     }
 
-    /**
-     * GET /api/escalas/proveedor/{id}/unmapped
-     * Get only unmapped scales for a provider (escalaInt = NULL)
-     * Used by frontend to show which scales need mapping
-     */
+
     @GetMapping("/proveedor/{proveedorId}/unmapped")
     public ResponseEntity<List<Escala>> getUnmappedEscalas(@PathVariable Integer proveedorId) {
         logger.info("GET /api/escalas/proveedor/{}/unmapped - Getting unmapped scales", proveedorId);
@@ -53,10 +49,6 @@ public class EscalaController {
         return ResponseEntity.ok(unmapped);
     }
 
-    /**
-     * GET /api/escalas/proveedor/{id}/status
-     * Check if all scales are mapped for a provider
-     */
     @GetMapping("/proveedor/{proveedorId}/status")
     public ResponseEntity<Map<String, Object>> getMappingStatus(@PathVariable Integer proveedorId) {
         logger.info("GET /api/escalas/proveedor/{}/status - Checking mapping status", proveedorId);
@@ -79,11 +71,6 @@ public class EscalaController {
         return ResponseEntity.ok(status);
     }
 
-    /**
-     * POST /api/escalas
-     * Save multiple scale mappings from frontend
-     * Request body: List of Escala objects with escalaInt values filled in
-     */
     @PostMapping
     public ResponseEntity<List<Escala>> saveMappings(@RequestBody List<Escala> escalas) {
         logger.info("POST /api/escalas - Saving {} scale mappings", escalas.size());
@@ -94,10 +81,6 @@ public class EscalaController {
         return ResponseEntity.ok(saved);
     }
 
-    /**
-     * PUT /api/escalas/{id}
-     * Update a single scale mapping
-     */
     @PutMapping("/{id}")
     public ResponseEntity<Escala> updateMapping(
         @PathVariable Integer id,
@@ -112,11 +95,6 @@ public class EscalaController {
         return ResponseEntity.ok(updated);
     }
 
-    /**
-     * GET /api/escalas/convert/{proveedorId}
-     * Convert internal scale (1-5) to external scale
-     * Query param: escalaInt
-     */
     @GetMapping("/convert/{proveedorId}")
     public ResponseEntity<Map<String, String>> convertToExternal(
         @PathVariable Integer proveedorId,
