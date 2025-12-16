@@ -136,34 +136,51 @@ public class AutoPedidoService {
     public Map<String, Object> generarPedidoAutomaticoOptimizado() {
         EstadisticasGeneracion estadisticas = new EstadisticasGeneracion();
 
+        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
+
+        logger.info("=== INICIO: Generación de pedido automático optimizado ===");
+
         List<Producto> productosBajos = productoRepository.findProductosBajoStock();
         estadisticas.setTotalProductosProcesados(productosBajos.size());
+        logger.info("Productos con stock bajo encontrados: {}", productosBajos.size());
 
         if (productosBajos.isEmpty()) {
+            logger.warn("No hay productos con stock bajo");
             return buildSuccessResponse("No hay productos con stock bajo", List.of(), List.of(), estadisticas);
         }
 
         List<Proveedor> proveedoresActivos = proveedorRepository.findAll().stream()
                 .filter(p -> p.getActivo() != null && p.getActivo())
                 .toList();
+        logger.info("Proveedores activos encontrados: {}", proveedoresActivos.size());
 
         if (proveedoresActivos.isEmpty()) {
+            logger.error("No hay proveedores activos disponibles");
             return buildErrorResponse("No hay proveedores activos disponibles", estadisticas);
         }
 
+        logger.info("Sincronizando precios de proveedores...");
         sincronizarPreciosProveedores(proveedoresActivos);
 
+        logger.info("Asignando productos por mejor precio...");
         Map<Integer, List<AsignacionProducto>> pedidosTemporales =
                 asignarProductosPorMejorPrecio(productosBajos, proveedoresActivos, estadisticas);
+        logger.info("Pedidos temporales generados para {} proveedores", pedidosTemporales.size());
 
         if (pedidosTemporales.isEmpty()) {
+            logger.error("Ningún proveedor puede suplir los productos necesarios");
             return buildErrorResponse("Ningún proveedor puede suplir los productos necesarios", estadisticas);
         }
 
+        logger.info("Consolidando pedidos unitarios...");
         consolidarPedidosUnitarios(pedidosTemporales, proveedoresActivos, estadisticas);
+        logger.info("Después de consolidar, quedan {} proveedores en pedidosTemporales", pedidosTemporales.size());
 
+        logger.info("Creando pedidos finales...");
         List<PedidoResumen> ordenesGeneradas = crearPedidosFinales(pedidosTemporales, proveedoresActivos, estadisticas);
+        logger.info("Pedidos creados: {}", ordenesGeneradas.size());
 
+        logger.info("=== FIN: Generación exitosa ===");
         return buildSuccessResponse("Pedidos generados exitosamente", ordenesGeneradas, List.of(), estadisticas);
     }
 
@@ -218,13 +235,23 @@ public class AutoPedidoService {
     }
 
     private List<OfertaProveedor> buscarOfertasProducto(Producto producto, List<Proveedor> proveedoresActivos) {
+        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
         List<OfertaProveedor> ofertas = new ArrayList<>();
+
+        logger.debug("Buscando ofertas para producto: {} (codigo: {})", producto.getNombre(), producto.getCodigoBarra());
 
         for (Proveedor proveedor : proveedoresActivos) {
             ProductoProveedor productoProveedor =
                     productoProveedorRepository.findByProveedorAndProducto(proveedor.getId(), producto.getCodigoBarra());
 
-            if (productoProveedor == null || productoProveedor.getEstado() != 1) {
+            if (productoProveedor == null) {
+                logger.debug("  - Proveedor {} NO tiene el producto asignado", proveedor.getName());
+                continue;
+            }
+
+            if (productoProveedor.getEstado() != 1) {
+                logger.debug("  - Proveedor {} tiene el producto pero estado != 1 (estado={})",
+                    proveedor.getName(), productoProveedor.getEstado());
                 continue;
             }
 
@@ -232,8 +259,13 @@ public class AutoPedidoService {
                     historialPrecioRepository.getCurrentPrice(producto.getCodigoBarra(), proveedor.getId());
 
             if (precioHistorial == null) {
+                logger.warn("  - Proveedor {} tiene el producto asignado pero SIN PRECIO en historial",
+                    proveedor.getName());
                 continue;
             }
+
+            logger.info("  ✓ Proveedor {} tiene el producto con precio: ${}",
+                proveedor.getName(), precioHistorial.getPrecio());
 
             OfertaProveedor oferta = new OfertaProveedor(
                     proveedor.getId(),
@@ -246,6 +278,7 @@ public class AutoPedidoService {
             ofertas.add(oferta);
         }
 
+        logger.info("Total ofertas encontradas para {}: {}", producto.getNombre(), ofertas.size());
         return ofertas;
     }
 
@@ -266,6 +299,9 @@ public class AutoPedidoService {
             List<Proveedor> proveedoresActivos,
             EstadisticasGeneracion estadisticas) {
 
+        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
+        logger.info("  Iniciando consolidación. Total proveedores antes: {}", pedidosTemporales.size());
+
         List<Integer> proveedoresUnitarios = pedidosTemporales.entrySet().stream()
                 .filter(entry -> entry.getValue().size() == 1)
                 .map(Map.Entry::getKey)
@@ -276,7 +312,11 @@ public class AutoPedidoService {
                 .map(Map.Entry::getKey)
                 .toList();
 
+        logger.info("  Proveedores unitarios (1 producto): {}", proveedoresUnitarios.size());
+        logger.info("  Proveedores grandes (>1 producto): {}", proveedoresGrandes.size());
+
         if (proveedoresUnitarios.isEmpty() || proveedoresGrandes.isEmpty()) {
+            logger.info("  No se puede consolidar (falta unitarios o grandes). Manteniendo todos los pedidos.");
             estadisticas.setPedidosUnitariosInevitables(proveedoresUnitarios.size());
             return;
         }
@@ -303,10 +343,20 @@ public class AutoPedidoService {
                     mejorProveedorGrandeId
             );
 
+            if (precioGrande == null) {
+                estadisticas.incrementarPedidosUnitariosInevitables();
+                continue;
+            }
+
             ProductoProveedor mappingGrande = productoProveedorRepository.findByProveedorAndProducto(
                     mejorProveedorGrandeId,
                     productoUnico.getCodigoBarra()
             );
+
+            if (mappingGrande == null) {
+                estadisticas.incrementarPedidosUnitariosInevitables();
+                continue;
+            }
 
             AsignacionProducto nuevaAsignacion = new AsignacionProducto(
                     productoUnico.getCodigoBarra(),
@@ -324,6 +374,9 @@ public class AutoPedidoService {
         for (Integer proveedorId : proveedoresAEliminar) {
             pedidosTemporales.remove(proveedorId);
         }
+
+        logger.info("  Consolidación completada. Proveedores eliminados: {}, Proveedores restantes: {}",
+                proveedoresAEliminar.size(), pedidosTemporales.size());
     }
 
     private Integer buscarMejorProveedorGrandeParaProducto(
@@ -363,26 +416,41 @@ public class AutoPedidoService {
             List<Proveedor> proveedoresActivos,
             EstadisticasGeneracion estadisticas) {
 
+        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
         List<PedidoResumen> ordenesGeneradas = new ArrayList<>();
 
+        logger.info("  crearPedidosFinales: Recibido map con {} entradas", pedidosTemporales.size());
+        logger.info("  crearPedidosFinales: entrySet size = {}", pedidosTemporales.entrySet().size());
+
         for (Map.Entry<Integer, List<AsignacionProducto>> entry : pedidosTemporales.entrySet()) {
+            logger.info("  DENTRO DEL FOR LOOP - procesando entry");
+
             Integer proveedorId = entry.getKey();
             List<AsignacionProducto> asignaciones = entry.getValue();
-
-            String proveedorNombre = obtenerNombreProveedor(proveedorId, proveedoresActivos);
-            Double rating = proveedoresActivos.stream()
-                    .filter(p -> p.getId().equals(proveedorId))
-                    .map(Proveedor::getRatingPromedio)
-                    .findFirst()
-                    .orElse(0.0);
+            String proveedorNombre = "Proveedor-" + proveedorId;
 
             try {
+
+                logger.info("  Proveedor ID: {}, Asignaciones: {}", proveedorId, asignaciones.size());
+
+                proveedorNombre = obtenerNombreProveedor(proveedorId, proveedoresActivos);
+                logger.info("  Nombre proveedor: {}", proveedorNombre);
+
+                Double rating = proveedoresActivos.stream()
+                        .filter(p -> p.getId().equals(proveedorId))
+                        .map(p -> p.getRatingPromedio() != null ? p.getRatingPromedio() : 0.0)
+                        .findFirst()
+                        .orElse(0.0);
+
+                logger.info("Creando pedido para proveedor {} con {} productos", proveedorNombre, asignaciones.size());
+
                 List<PedidoProducto> productos = asignaciones.stream()
                         .map(asig -> {
                             PedidoProducto pp = new PedidoProducto();
                             pp.setCodigoBarra(asig.getCodigoBarra());
                             pp.setCodigoBarraProveedor(asig.getCodigoBarraProveedor());
                             pp.setCantidad(asig.getCantidad());
+                            logger.debug("  - Producto: codigoBarra={}, cantidad={}", asig.getCodigoBarra(), asig.getCantidad());
                             return pp;
                         })
                         .toList();
@@ -391,12 +459,18 @@ public class AutoPedidoService {
                         .map(AsignacionProducto::getCostoTotal)
                         .reduce(0.0f, Float::sum);
 
+                logger.info("Costo total del pedido: ${}", costoTotal);
+
                 Pedido nuevoPedido = new Pedido();
                 nuevoPedido.setProveedorId(proveedorId);
                 nuevoPedido.setEstadoId(1);
                 nuevoPedido.setProductos(productos);
+                // Set estimated date to 7 days from now for automatic orders
+                nuevoPedido.setFechaEstimada(java.time.LocalDateTime.now().plusDays(7));
 
+                logger.info("Llamando a pedidoService.createPedido...");
                 Pedido pedidoCreado = pedidoService.createPedido(nuevoPedido);
+                logger.info("Pedido creado exitosamente con ID: {}", pedidoCreado.getId());
 
                 PedidoResumen resumen = new PedidoResumen();
                 resumen.setPedidoId(pedidoCreado.getId());
@@ -410,7 +484,7 @@ public class AutoPedidoService {
                 estadisticas.incrementarTotalPedidosCreados();
 
             } catch (Exception e) {
-                // Continuar con siguientes pedidos
+                logger.error("ERROR creando pedido para proveedor {}: {}", proveedorNombre, e.getMessage(), e);
             }
         }
 

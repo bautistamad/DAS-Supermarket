@@ -74,6 +74,18 @@ public class SoapProveedorAdapter implements ProveedorIntegration {
                 producto.setCodigoBarra(soapProducto.getCodigoBarra());
                 producto.setNombre(soapProducto.getNombre());
                 producto.setImage(soapProducto.getImagen());
+
+                // Create a HistorialPrecio with the current price
+                ubp.edu.com.ar.finalproyect.domain.HistorialPrecio precio =
+                    new ubp.edu.com.ar.finalproyect.domain.HistorialPrecio();
+                precio.setCodigoBarra(soapProducto.getCodigoBarra());
+                precio.setPrecio(soapProducto.getPrecio());
+                precio.setFechaInicio(LocalDateTime.now());
+                precio.setFechaFin(null); // Current price
+
+                // Set the price in the producto
+                producto.setPrecios(List.of(precio));
+
                 productos.add(producto);
             }
 
