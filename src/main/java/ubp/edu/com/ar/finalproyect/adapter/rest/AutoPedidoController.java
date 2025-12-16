@@ -20,25 +20,30 @@ public class AutoPedidoController {
     }
 
     /**
-     * Generate automatic order for products below minimum stock
+     * Generate automatic orders for products below minimum stock using optimized two-stage algorithm
      *
-     * Logic:
-     * - Find products where actualStock <= stockMinimo
-     * - Compare all providers (REST + SOAP)
-     * - Select by lowest total price, then by highest rating (if tie)
-     * - Create ONE order to the best provider
+     * Algorithm:
+     * STAGE 0: Synchronize prices from all active providers
+     * STAGE 1: Greedy assignment by best price (select cheapest provider for each product)
+     * STAGE 2: Consolidate small orders (move single-item orders to larger providers)
+     * STAGE 3: Create final orders in the database
+     *
+     * This optimized approach:
+     * - Minimizes costs by selecting the best price for each product
+     * - Reduces logistics complexity by consolidating small orders
+     * - Creates MULTIPLE orders (one per provider) instead of a single order
      *
      * POST /api/pedidos/auto-generar
      *
-     * @return Map with order details and result
+     * @return Map with order details, statistics, and result
      */
     @PostMapping("/auto-generar")
     public ResponseEntity<Map<String, Object>> generarPedidoAutomatico() {
-        logger.info("Manual trigger: generating automatic orders for low-stock products");
+        logger.info("Manual trigger: generating OPTIMIZED automatic orders for low-stock products");
 
-        Map<String, Object> response = autoPedidoService.generarPedidoAutomatico();
+        Map<String, Object> response = autoPedidoService.generarPedidoAutomaticoOptimizado();
 
-        logger.info("Automatic order generation completed: {}", response.get("mensaje"));
+        logger.info("Optimized automatic order generation completed: {}", response.get("mensaje"));
 
         return ResponseEntity.ok(response);
     }
