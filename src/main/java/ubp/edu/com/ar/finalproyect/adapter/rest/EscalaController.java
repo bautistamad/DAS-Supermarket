@@ -23,11 +23,7 @@ public class EscalaController {
     @Autowired
     private EscalaService escalaService;
 
-    /**
-     * GET /api/escalas/proveedor/{id}
-     * Get all scale mappings for a provider
-     * Used by frontend to display all scales (mapped and unmapped)
-     */
+
     @GetMapping("/proveedor/{proveedorId}")
     public ResponseEntity<List<Escala>> getEscalasByProveedor(@PathVariable Integer proveedorId) {
         logger.info("GET /api/escalas/proveedor/{} - Getting all scales", proveedorId);
