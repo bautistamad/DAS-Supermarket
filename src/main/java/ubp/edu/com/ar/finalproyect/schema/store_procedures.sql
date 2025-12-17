@@ -341,8 +341,8 @@ BEGIN
     ELSE
         BEGIN
             -- INSERT
-            INSERT INTO Producto (codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual)
-            VALUES (@codigoBarra, @nombre, @imagen, @stockMinimo, @stockMaximo, @stockActual);
+            INSERT INTO Producto (codigoBarra, nombre, imagen, stockMinimo, stockMaximo, stockActual, estado)
+            VALUES (@codigoBarra, @nombre, @imagen, @stockMinimo, @stockMaximo, @stockActual,1);
         END
 
     -- Return the saved producto

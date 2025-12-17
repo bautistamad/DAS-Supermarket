@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class AutoPedidoService {
@@ -46,504 +47,168 @@ public class AutoPedidoService {
     }
 
     @Transactional
-    public Map<String, Object> generarPedidoAutomatico() {
-        List<Producto> productosBajos = productoRepository.findProductosBajoStock();
-        if (productosBajos.isEmpty()) {
-            return buildResponse(true, "No hay productos con stock bajo", null, null, 0, 0.0f, null);
-        }
-
-        List<Proveedor> proveedores = proveedorRepository.findAll().stream()
-                .filter(p -> p.getActivo() != null && p.getActivo())
-                .toList();
-
-        if (proveedores.isEmpty()) {
-            return buildResponse(false, "No hay proveedores activos disponibles", null, null, 0, 0.0f, null);
-        }
-
-        Map<String, Object> mejorOpcion = null;
-
-        for (Proveedor proveedor : proveedores) {
-            List<PedidoProducto> productosPedido = prepararProductosPedido(productosBajos, proveedor);
-            if (productosPedido.isEmpty()) {
-                continue;
-            }
-
-            Pedido pedidoTemp = new Pedido();
-            pedidoTemp.setProveedorId(proveedor.getId());
-            pedidoTemp.setProductos(productosPedido);
-
-            Map<String, Object> estimacion = proveedorIntegrationService.estimarPedidoWithProveedor(
-                    proveedor.getId(), pedidoTemp);
-
-            if (estimacion == null) {
-                continue;
-            }
-
-            Float precioTotal = extractFloat(estimacion.get("precioEstimadoTotal"));
-            Double rating = proveedor.getRatingPromedio() != null ? proveedor.getRatingPromedio() : 0.0;
-
-            if (mejorOpcion == null) {
-                mejorOpcion = new HashMap<>();
-                mejorOpcion.put("proveedor", proveedor);
-                mejorOpcion.put("precioTotal", precioTotal);
-                mejorOpcion.put("rating", rating);
-                mejorOpcion.put("productos", productosPedido);
-                mejorOpcion.put("estimacion", estimacion);
-            } else if (esMejorOpcion(precioTotal, rating, mejorOpcion)) {
-                mejorOpcion = new HashMap<>();
-                mejorOpcion.put("proveedor", proveedor);
-                mejorOpcion.put("precioTotal", precioTotal);
-                mejorOpcion.put("rating", rating);
-                mejorOpcion.put("productos", productosPedido);
-                mejorOpcion.put("estimacion", estimacion);
-            }
-        }
-
-        if (mejorOpcion == null) {
-            return buildResponse(false, "Ningún proveedor puede suplir todos los productos", null, null, 0, 0.0f, null);
-        }
-
-        Proveedor ganador = (Proveedor) mejorOpcion.get("proveedor");
-        @SuppressWarnings("unchecked")
-        List<PedidoProducto> productos = (List<PedidoProducto>) mejorOpcion.get("productos");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> estimacionGanadora = (Map<String, Object>) mejorOpcion.get("estimacion");
-
-        Pedido nuevoPedido = new Pedido();
-        nuevoPedido.setProveedorId(ganador.getId());
-        nuevoPedido.setEstadoId(1);
-        nuevoPedido.setProductos(productos);
-
-        if (estimacionGanadora != null && estimacionGanadora.get("fechaEstimada") != null) {
-            Object fechaEstimadaObj = estimacionGanadora.get("fechaEstimada");
-            if (fechaEstimadaObj instanceof LocalDateTime) {
-                nuevoPedido.setFechaEstimada((LocalDateTime) fechaEstimadaObj);
-            } else if (fechaEstimadaObj instanceof String) {
-                nuevoPedido.setFechaEstimada(LocalDateTime.parse((String) fechaEstimadaObj));
-            }
-        }
-
-        Pedido pedidoCreado = pedidoService.createPedido(nuevoPedido);
-
-        return buildResponse(true, "Pedido automático creado exitosamente",
-                pedidoCreado.getId(), ganador.getName(), productos.size(),
-                (Float) mejorOpcion.get("precioTotal"), (Double) mejorOpcion.get("rating"));
-    }
-
-    @Transactional
     public Map<String, Object> generarPedidoAutomaticoOptimizado() {
-
-        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
-
-        logger.info("=== INICIO: Generación de pedido automático optimizado ===");
-
         List<Producto> productosBajos = productoRepository.findProductosBajoStock();
-        logger.info("Productos con stock bajo encontrados: {}", productosBajos.size());
-
-        if (productosBajos.isEmpty()) {
-            logger.warn("No hay productos con stock bajo");
-            return buildSuccessResponse("No hay productos con stock bajo", List.of());
-        }
 
         List<Proveedor> proveedoresActivos = proveedorRepository.findAll().stream()
-                .filter(p -> p.getActivo() != null && p.getActivo())
+                .filter(p -> p.getActivo() == true)
                 .toList();
-        logger.info("Proveedores activos encontrados: {}", proveedoresActivos.size());
 
-        if (proveedoresActivos.isEmpty()) {
-            logger.error("No hay proveedores activos disponibles");
-            return buildErrorResponse("No hay proveedores activos disponibles");
-        }
+        sincronizarPrecios(proveedoresActivos);
 
-        logger.info("Sincronizando precios de proveedores...");
-        sincronizarPreciosProveedores(proveedoresActivos);
-
-        logger.info("Asignando productos por mejor precio...");
-        Map<Integer, List<AsignacionProducto>> pedidosTemporales =
-                asignarProductosPorMejorPrecio(productosBajos, proveedoresActivos);
-        logger.info("Pedidos temporales generados para {} proveedores", pedidosTemporales.size());
+        Map<Integer, List<AsignacionProducto>> pedidosTemporales = asignacionProductoMenorPrecio(productosBajos, proveedoresActivos);
 
         if (pedidosTemporales.isEmpty()) {
-            logger.error("Ningún proveedor puede suplir los productos necesarios");
-            return buildErrorResponse("Ningún proveedor puede suplir los productos necesarios");
+            return buildResponse(false, "No hay proveedores disponibles para los productos", 0);
         }
 
-        logger.info("Consolidando pedidos unitarios...");
-        consolidarPedidosUnitarios(pedidosTemporales, proveedoresActivos);
-        logger.info("Después de consolidar, quedan {} proveedores en pedidosTemporales", pedidosTemporales.size());
+        agrupacionPedidos(pedidosTemporales, proveedoresActivos);
+        int totalPedidos = crearPedidosFinales(pedidosTemporales);
 
-        logger.info("Creando pedidos finales...");
-
-        logger.info("=== FIN: Generación exitosa ===");
-        return buildSuccessResponse("Pedidos generados exitosamente", List.of());
+        return buildResponse(true, "Proceso finalizado con éxito", totalPedidos);
     }
 
-    private void sincronizarPreciosProveedores(List<Proveedor> proveedoresActivos) {
-        for (Proveedor proveedor : proveedoresActivos) {
-            try {
-                proveedorIntegrationService.syncProductosFromProveedor(proveedor.getId());
-            } catch (Exception e) {
-                continue;
+    // Creacion / Agrupar Pedidos
+    private Map<Integer, List<AsignacionProducto>> asignacionProductoMenorPrecio(
+            List<Producto> productos, List<Proveedor> proveedores) {
+
+        Map<Integer, List<AsignacionProducto>> mapaPedidos = new HashMap<>();
+
+        for (Producto prod : productos) {
+            OfertaProveedor mejorOferta = buscarMejorOferta(prod, proveedores);
+
+            if (mejorOferta != null) {
+                AsignacionProducto item = new AsignacionProducto(
+                        prod.getCodigoBarra(),
+                        mejorOferta.getCodigoBarraProveedor(),
+                        prod.getMaxStock() - prod.getActualStock(),
+                        mejorOferta.getPrecio(),
+                        prod.getNombre()
+                );
+
+                mapaPedidos
+                        .computeIfAbsent(mejorOferta.getProveedorId(), k -> new ArrayList<>())
+                        .add(item);
             }
         }
+        return mapaPedidos;
     }
 
-    private Map<Integer, List<AsignacionProducto>> asignarProductosPorMejorPrecio(
-            List<Producto> productosBajos,
-            List<Proveedor> proveedoresActivos
-            ) {
+    private OfertaProveedor buscarMejorOferta(Producto producto, List<Proveedor> proveedores) {
+        OfertaProveedor mejor = null;
+        for (Proveedor p : proveedores) {
+            HistorialPrecio precio = historialPrecioRepository.getCurrentPrice(producto.getCodigoBarra(), p.getId());
+            ProductoProveedor pp = productoProveedorRepository.findByProveedorAndProducto(p.getId(), producto.getCodigoBarra());
 
-        Map<Integer, List<AsignacionProducto>> pedidosTemporales = new HashMap<>();
+            if (precio != null && pp != null) {
+                OfertaProveedor actual = new OfertaProveedor(
+                        p.getId(), p.getName(), pp.getCodigoBarraProveedor(),
+                        precio.getPrecio(), p.getRatingPromedio());
 
-        for (Producto producto : productosBajos) {
-            List<OfertaProveedor> ofertas = buscarOfertasProducto(producto, proveedoresActivos);
-
-            if (ofertas.isEmpty()) {
-                continue;
-            }
-
-            OfertaProveedor mejorOferta = seleccionarMejorOferta(ofertas);
-
-            Integer cantidad = producto.getMaxStock() - producto.getActualStock();
-            if (cantidad <= 0) {
-                continue;
-            }
-
-            AsignacionProducto asignacion = new AsignacionProducto(
-                    producto.getCodigoBarra(),
-                    mejorOferta.getCodigoBarraProveedor(),
-                    cantidad,
-                    mejorOferta.getPrecio(),
-                    producto.getNombre()
-            );
-
-            pedidosTemporales
-                    .computeIfAbsent(mejorOferta.getProveedorId(), k -> new ArrayList<>())
-                    .add(asignacion);
-        }
-
-        return pedidosTemporales;
-    }
-
-    private List<OfertaProveedor> buscarOfertasProducto(Producto producto, List<Proveedor> proveedoresActivos) {
-        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
-        List<OfertaProveedor> ofertas = new ArrayList<>();
-
-        logger.debug("Buscando ofertas para producto: {} (codigo: {})", producto.getNombre(), producto.getCodigoBarra());
-
-        for (Proveedor proveedor : proveedoresActivos) {
-            ProductoProveedor productoProveedor =
-                    productoProveedorRepository.findByProveedorAndProducto(proveedor.getId(), producto.getCodigoBarra());
-
-            if (productoProveedor == null) {
-                logger.debug("  - Proveedor {} NO tiene el producto asignado", proveedor.getName());
-                continue;
-            }
-
-            HistorialPrecio precioHistorial =
-                    historialPrecioRepository.getCurrentPrice(producto.getCodigoBarra(), proveedor.getId());
-
-            if (precioHistorial == null) {
-                logger.warn("  - Proveedor {} tiene el producto asignado pero SIN PRECIO en historial",
-                    proveedor.getName());
-                continue;
-            }
-
-            logger.info("  ✓ Proveedor {} tiene el producto con precio: ${}",
-                proveedor.getName(), precioHistorial.getPrecio());
-
-            OfertaProveedor oferta = new OfertaProveedor(
-                    proveedor.getId(),
-                    proveedor.getName(),
-                    productoProveedor.getCodigoBarraProveedor(),
-                    precioHistorial.getPrecio(),
-                    proveedor.getRatingPromedio()
-            );
-
-            ofertas.add(oferta);
-        }
-
-        logger.info("Total ofertas encontradas para {}: {}", producto.getNombre(), ofertas.size());
-        return ofertas;
-    }
-
-    private OfertaProveedor seleccionarMejorOferta(List<OfertaProveedor> ofertas) {
-        return ofertas.stream()
-                .min((o1, o2) -> {
-                    int precioComparison = Float.compare(o1.getPrecio(), o2.getPrecio());
-                    if (precioComparison != 0) {
-                        return precioComparison;
-                    }
-                    return Double.compare(o2.getRating(), o1.getRating());
-                })
-                .orElseThrow();
-    }
-
-    private void consolidarPedidosUnitarios(
-            Map<Integer, List<AsignacionProducto>> pedidosTemporales,
-            List<Proveedor> proveedoresActivos
-            ) {
-
-        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
-        logger.info("  Iniciando consolidación. Total proveedores antes: {}", pedidosTemporales.size());
-
-        List<Integer> proveedoresUnitarios = pedidosTemporales.entrySet().stream()
-                .filter(entry -> entry.getValue().size() == 1)
-                .map(Map.Entry::getKey)
-                .toList();
-
-        List<Integer> proveedoresGrandes = pedidosTemporales.entrySet().stream()
-                .filter(entry -> entry.getValue().size() > 1)
-                .map(Map.Entry::getKey)
-                .toList();
-
-        logger.info("  Proveedores unitarios (1 producto): {}", proveedoresUnitarios.size());
-        logger.info("  Proveedores grandes (>1 producto): {}", proveedoresGrandes.size());
-
-        if (proveedoresUnitarios.isEmpty() || proveedoresGrandes.isEmpty()) {
-            logger.info("  No se puede consolidar (falta unitarios o grandes). Manteniendo todos los pedidos.");
-            return;
-        }
-
-        List<Integer> proveedoresAEliminar = new ArrayList<>();
-
-        for (Integer proveedorUnitarioId : proveedoresUnitarios) {
-            List<AsignacionProducto> productos = pedidosTemporales.get(proveedorUnitarioId);
-            AsignacionProducto productoUnico = productos.get(0);
-
-            Integer mejorProveedorGrandeId = buscarMejorProveedorGrandeParaProducto(
-                    productoUnico.getCodigoBarra(),
-                    proveedoresGrandes,
-                    proveedoresActivos
-            );
-
-            if (mejorProveedorGrandeId == null) {
-                continue;
-            }
-
-            HistorialPrecio precioGrande = historialPrecioRepository.getCurrentPrice(
-                    productoUnico.getCodigoBarra(),
-                    mejorProveedorGrandeId
-            );
-
-            if (precioGrande == null) {
-                continue;
-            }
-
-            ProductoProveedor mappingGrande = productoProveedorRepository.findByProveedorAndProducto(
-                    mejorProveedorGrandeId,
-                    productoUnico.getCodigoBarra()
-            );
-
-            if (mappingGrande == null) {
-                continue;
-            }
-
-            AsignacionProducto nuevaAsignacion = new AsignacionProducto(
-                    productoUnico.getCodigoBarra(),
-                    mappingGrande.getCodigoBarraProveedor(),
-                    productoUnico.getCantidad(),
-                    precioGrande.getPrecio(),
-                    productoUnico.getProductoNombre()
-            );
-
-            pedidosTemporales.get(mejorProveedorGrandeId).add(nuevaAsignacion);
-            proveedoresAEliminar.add(proveedorUnitarioId);
-        }
-
-        for (Integer proveedorId : proveedoresAEliminar) {
-            pedidosTemporales.remove(proveedorId);
-        }
-
-        logger.info("Consolidación completada. Proveedores eliminados: {}, Proveedores restantes: {}",
-                proveedoresAEliminar.size(), pedidosTemporales.size());
-    }
-
-    private Integer buscarMejorProveedorGrandeParaProducto(
-            Integer codigoBarra,
-            List<Integer> proveedoresGrandes,
-            List<Proveedor> proveedoresActivos) {
-
-        Float mejorPrecio = Float.MAX_VALUE;
-        Integer mejorProveedorId = null;
-
-        for (Integer proveedorId : proveedoresGrandes) {
-            ProductoProveedor productoProveedor =
-                    productoProveedorRepository.findByProveedorAndProducto(proveedorId, codigoBarra);
-
-            if (productoProveedor == null) {
-                continue;
-            }
-
-            HistorialPrecio precioHistorial =
-                    historialPrecioRepository.getCurrentPrice(codigoBarra, proveedorId);
-
-            if (precioHistorial == null) {
-                continue;
-            }
-
-            if (precioHistorial.getPrecio() < mejorPrecio) {
-                mejorPrecio = precioHistorial.getPrecio();
-                mejorProveedorId = proveedorId;
+                if (esMejor(actual, mejor)) mejor = actual;
             }
         }
-
-        return mejorProveedorId;
+        return mejor;
     }
 
-    private void crearPedidosFinales(
-            Map<Integer, List<AsignacionProducto>> pedidosTemporales,
-            List<Proveedor> proveedoresActivos
-             ) {
-
-        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AutoPedidoService.class);
-
-
-        logger.info("  crearPedidosFinales: Recibido map con {} entradas", pedidosTemporales.size());
-        logger.info("  crearPedidosFinales: entrySet size = {}", pedidosTemporales.entrySet().size());
-
-        for (Map.Entry<Integer, List<AsignacionProducto>> entry : pedidosTemporales.entrySet()) {
-            logger.info("  DENTRO DEL FOR LOOP - procesando entry");
-
-            Integer proveedorId = entry.getKey();
-            List<AsignacionProducto> asignaciones = entry.getValue();
-            String proveedorNombre = "Proveedor-" + proveedorId;
-
-            try {
-
-                logger.info("  Proveedor ID: {}, Asignaciones: {}", proveedorId, asignaciones.size());
-
-                proveedorNombre = obtenerNombreProveedor(proveedorId, proveedoresActivos);
-                logger.info("  Nombre proveedor: {}", proveedorNombre);
-
-                Double rating = proveedoresActivos.stream()
-                        .filter(p -> p.getId().equals(proveedorId))
-                        .map(p -> p.getRatingPromedio() != null ? p.getRatingPromedio() : 0.0)
-                        .findFirst()
-                        .orElse(0.0);
-
-                logger.info("Creando pedido para proveedor {} con {} productos", proveedorNombre, asignaciones.size());
-
-                List<PedidoProducto> productos = asignaciones.stream()
-                        .map(asig -> {
-                            PedidoProducto pp = new PedidoProducto();
-                            pp.setCodigoBarra(asig.getCodigoBarra());
-                            pp.setCodigoBarraProveedor(asig.getCodigoBarraProveedor());
-                            pp.setCantidad(asig.getCantidad());
-                            logger.debug("  - Producto: codigoBarra={}, cantidad={}", asig.getCodigoBarra(), asig.getCantidad());
-                            return pp;
-                        })
-                        .toList();
-
-                Float costoTotal = asignaciones.stream()
-                        .map(AsignacionProducto::getCostoTotal)
-                        .reduce(0.0f, Float::sum);
-
-                logger.info("Costo total del pedido: ${}", costoTotal);
-
-                Pedido nuevoPedido = new Pedido();
-                nuevoPedido.setProveedorId(proveedorId);
-                nuevoPedido.setEstadoId(1);
-                nuevoPedido.setProductos(productos);
-                // Set estimated date to 7 days from now for automatic orders // Modify getting request to provider
-                nuevoPedido.setFechaEstimada(java.time.LocalDateTime.now().plusDays(7));
-
-                logger.info("Llamando a pedidoService.createPedido...");
-                Pedido pedidoCreado = pedidoService.createPedido(nuevoPedido);
-                logger.info("Pedido creado exitosamente con ID: {}", pedidoCreado.getId());
-
-
-            } catch (Exception e) {
-                logger.error("ERROR creando pedido para proveedor {}: {}", proveedorNombre, e.getMessage(), e);
-            }
-        }
-
-        return;
+    private boolean esMejor(OfertaProveedor actual, OfertaProveedor mejor) {
+        if (mejor == null) return true;
+        if (actual.getPrecio() < mejor.getPrecio()) return true;
+        return actual.getPrecio().equals(mejor.getPrecio()) && actual.getRating() > mejor.getRating();
     }
 
-    private String obtenerNombreProveedor(Integer proveedorId, List<Proveedor> proveedoresActivos) {
-        return proveedoresActivos.stream()
-                .filter(p -> p.getId().equals(proveedorId))
-                .map(Proveedor::getName)
-                .findFirst()
-                .orElse("Unknown Provider");
+    private void sincronizarPrecios(List<Proveedor> proveedores) {
+        proveedores.forEach(p -> {
+            try { proveedorIntegrationService.syncProductosFromProveedor(p.getId()); } catch (Exception e) {}
+        });
     }
 
-    private Map<String, Object> buildSuccessResponse(
-            String mensaje,
-            List<Map<String, Object>> productosSinStock
-            ) {
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("exito", true);
-        response.put("mensaje", mensaje);
-        response.put("productosSinStock", productosSinStock);
-        return response;
-    }
-
-    private Map<String, Object> buildErrorResponse(String mensaje) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("exito", false);
-        response.put("mensaje", mensaje);
-        response.put("productosSinStock", List.of());
-        return response;
-    }
-
-    private List<PedidoProducto> prepararProductosPedido(List<Producto> productosBajos, Proveedor proveedor) {
-        List<PedidoProducto> productosPedido = new ArrayList<>();
-
-        for (Producto producto : productosBajos) {
-            var productoProveedor = productoProveedorRepository.findByProveedorAndProducto(
-                    proveedor.getId(), producto.getCodigoBarra());
-
-            if (productoProveedor == null) {
-                return new ArrayList<>();
-            }
-
-            Integer cantidad = producto.getMaxStock() - producto.getActualStock();
-            if (cantidad > 0) {
-                PedidoProducto pp = new PedidoProducto();
-                pp.setCodigoBarra(producto.getCodigoBarra());
-                pp.setCodigoBarraProveedor(productoProveedor.getCodigoBarraProveedor());
-                pp.setCantidad(cantidad);
-                productosPedido.add(pp);
-            }
-        }
-
-        return productosPedido;
-    }
-
-    private boolean esMejorOpcion(Float precio, Double rating, Map<String, Object> mejorActual) {
-        Float precioMejor = (Float) mejorActual.get("precioTotal");
-        Double ratingMejor = (Double) mejorActual.get("rating");
-
-        if (precio < precioMejor) {
-            return true;
-        }
-        if (precio.equals(precioMejor) && rating > ratingMejor) {
-            return true;
-        }
-        return false;
-    }
-
-    private Map<String, Object> buildResponse(boolean exito, String mensaje, Integer pedidoId,
-                                              String proveedor, int productosCount, Float costo, Double rating) {
+    private Map<String, Object> buildResponse(boolean exito, String mensaje, int cantidad) {
         Map<String, Object> response = new HashMap<>();
         response.put("exito", exito);
         response.put("mensaje", mensaje);
-        response.put("pedidoId", pedidoId);
-        response.put("proveedorSeleccionado", proveedor);
-        response.put("productosOrdenados", productosCount);
-        response.put("costoTotal", costo);
-        response.put("ratingProveedor", rating);
         return response;
     }
 
-    private Float extractFloat(Object value) {
-        if (value == null) return 0.0f;
-        if (value instanceof Float) return (Float) value;
-        if (value instanceof Double) return ((Double) value).floatValue();
-        if (value instanceof Integer) return ((Integer) value).floatValue();
-        return Float.parseFloat(value.toString());
+    // Post Procesado Pedidos
+
+    private void agrupacionPedidos(Map<Integer, List<AsignacionProducto>> pedidos, List<Proveedor> proveedoresActivos) {
+
+        List<Integer> proveedoresUnitarios = pedidos.entrySet().stream()
+                .filter(e -> e.getValue().size() == 1).map(Map.Entry::getKey).toList();
+
+        List<Integer> proveedoresGrandes = pedidos.entrySet().stream()
+                .filter(e -> e.getValue().size() > 1).map(Map.Entry::getKey).toList();
+
+        if (proveedoresUnitarios.isEmpty() || proveedoresGrandes.isEmpty()) {
+            return;
+        }
+
+        // Iterar sobre los pequeños para intentar moverlos
+        List<Integer> aEliminar = new ArrayList<>();
+
+        for (Integer idUnitario : proveedoresUnitarios) {
+            AsignacionProducto itemUnitario = pedidos.get(idUnitario).get(0);
+
+            // Buscar si algún proveedor grande vende este producto
+            OfertaProveedor mejorOpcionGrande = null;
+
+            for (Integer idGrande : proveedoresGrandes) {
+                // Consultamos precio en DB para este proveedor grande
+                HistorialPrecio precioGrande = historialPrecioRepository.getCurrentPrice(itemUnitario.getCodigoBarra(), idGrande);
+                ProductoProveedor ppGrande = productoProveedorRepository.findByProveedorAndProducto(idGrande, itemUnitario.getCodigoBarra());
+
+                if (precioGrande != null && ppGrande != null) {
+                    // Encontramos que un proveedor grande si lo vende
+                    if (mejorOpcionGrande == null || precioGrande.getPrecio() < mejorOpcionGrande.getPrecio()) {
+                        // Buscamos el nombre/rating solo si es necesario o usamos dummy data si no afecta logica
+                        mejorOpcionGrande = new OfertaProveedor(
+                                idGrande, "Consolidacion", ppGrande.getCodigoBarraProveedor(),
+                                precioGrande.getPrecio(), 0.0);
+                    }
+                }
+            }
+
+            // Si encontramos un proveedor para el pedido viejo
+            if (mejorOpcionGrande != null) {
+
+                AsignacionProducto itemReasignado = new AsignacionProducto(
+                        itemUnitario.getCodigoBarra(),
+                        mejorOpcionGrande.getCodigoBarraProveedor(),
+                        itemUnitario.getCantidad(),
+                        mejorOpcionGrande.getPrecio(),
+                        itemUnitario.getProductoNombre()
+                );
+
+                pedidos.get(mejorOpcionGrande.getProveedorId()).add(itemReasignado);
+                aEliminar.add(idUnitario);
+            }
+        }
+
+        aEliminar.forEach(pedidos::remove);
+    }
+
+    // Creacion pedidos
+    private int crearPedidosFinales(Map<Integer, List<AsignacionProducto>> pedidosMap) {
+        int count = 0;
+        for (var entry : pedidosMap.entrySet()) {
+            Pedido pedido = new Pedido();
+            pedido.setProveedorId(entry.getKey());
+            pedido.setEstadoId(1);
+            pedido.setFechaEstimada(LocalDateTime.now().plusDays(7));
+
+            List<PedidoProducto> lineas = entry.getValue().stream().map(a -> {
+                PedidoProducto pp = new PedidoProducto();
+                pp.setCodigoBarra(a.getCodigoBarra());
+                pp.setCodigoBarraProveedor(a.getCodigoBarraProveedor());
+                pp.setCantidad(a.getCantidad());
+                return pp;
+            }).collect(Collectors.toList());
+
+            pedido.setProductos(lineas);
+            pedidoService.createPedido(pedido);
+            count++;
+        }
+        return count;
     }
 }

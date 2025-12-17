@@ -32,12 +32,16 @@ CREATE TABLE Producto (
                           stockMinimo INT NOT NULL DEFAULT 0,
                           stockMaximo INT NOT NULL DEFAULT 0,
                           stockActual INT NOT NULL DEFAULT 0,
-                          estado INT NOT NULL,
+                          estado INT NULL,
 
                           CONSTRAINT FK_Producto_EstadoProducto
                               FOREIGN KEY (estado) REFERENCES EstadoProducto(id)
 );
 GO
+
+-- ALTER TABLE Producto
+--     ALTER COLUMN estado INT NULL;
+-- GO
 
 CREATE TABLE ProductoProveedor (
                                 idProveedor INT NOT NULL,
