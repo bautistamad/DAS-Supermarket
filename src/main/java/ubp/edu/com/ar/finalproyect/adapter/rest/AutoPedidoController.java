@@ -19,24 +19,6 @@ public class AutoPedidoController {
         this.autoPedidoService = autoPedidoService;
     }
 
-    /**
-     * Generate automatic orders for products below minimum stock using optimized two-stage algorithm
-     *
-     * Algorithm:
-     * STAGE 0: Synchronize prices from all active providers
-     * STAGE 1: Greedy assignment by best price (select cheapest provider for each product)
-     * STAGE 2: Consolidate small orders (move single-item orders to larger providers)
-     * STAGE 3: Create final orders in the database
-     *
-     * This optimized approach:
-     * - Minimizes costs by selecting the best price for each product
-     * - Reduces logistics complexity by consolidating small orders
-     * - Creates MULTIPLE orders (one per provider) instead of a single order
-     *
-     * POST /api/pedidos/auto-generar
-     *
-     * @return Map with order details, statistics, and result
-     */
     @PostMapping("/auto-generar")
     public ResponseEntity<Map<String, Object>> generarPedidoAutomatico() {
         logger.info("Manual trigger: generating OPTIMIZED automatic orders for low-stock products");

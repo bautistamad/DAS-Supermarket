@@ -13,6 +13,9 @@ public class ProductoProveedorDTO {
     @SerializedName("precio")
     private Float precio;
 
+    @SerializedName("imagen")
+    private String imagen;
+
     public ProductoProveedorDTO() {
     }
 
@@ -20,6 +23,13 @@ public class ProductoProveedorDTO {
         this.codigoBarra = codigoBarra;
         this.nombre = nombre;
         this.precio = precio;
+    }
+
+    public ProductoProveedorDTO(Integer codigoBarra, String nombre, Float precio, String imagen) {
+        this.codigoBarra = codigoBarra;
+        this.nombre = nombre;
+        this.precio = precio;
+        this.imagen = imagen;
     }
 
     public Integer getCodigoBarra() {
@@ -46,12 +56,21 @@ public class ProductoProveedorDTO {
         this.precio = precio;
     }
 
+    public String getImagen() {
+        return imagen;
+    }
+
+    public void setImagen(String imagen) {
+        this.imagen = imagen;
+    }
+
     @Override
     public String toString() {
         return "ProductoProveedorDTO{" +
                 "codigoBarra=" + codigoBarra +
                 ", nombre='" + nombre + '\'' +
                 ", precio=" + precio +
+                ", imagen='" + imagen + '\'' +
                 '}';
     }
 }

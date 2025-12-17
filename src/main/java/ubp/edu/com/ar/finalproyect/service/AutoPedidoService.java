@@ -53,8 +53,6 @@ public class AutoPedidoService {
         if (productosBajos.isEmpty()) {
             return buildResponse(false, "No se encuentran productos a reestockear", 0);
         }
-        System.out.println("DIOS AYUDANOS");
-        System.out.println(productosBajos.size());
 
         List<Proveedor> proveedoresActivos = proveedorRepository.findAll().stream()
                 .filter(p -> p.getActivo() == true)

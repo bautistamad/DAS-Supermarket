@@ -72,11 +72,9 @@ public class ProveedorService {
 
         logger.info("Health check passed for provider: {}", proveedor.getName());
 
-        // Save provider
         Proveedor saved = repository.save(proveedor);
         logger.info("Provider saved with ID: {}", saved.getId());
 
-        // Fetch and save rating scale from provider (unmapped)
         try {
             logger.info("Fetching rating scale from provider {}", saved.getId());
 
@@ -87,8 +85,7 @@ public class ProveedorService {
                 logger.info("Successfully fetched {} scale values from provider {}",
                     escalasExternas.size(), saved.getId());
 
-                // Save scales WITHOUT mapping (escalaInt = null)
-                // User will map them later via frontend
+
                 for (EscalaDefinicion def : escalasExternas) {
                     Escala escala = new Escala();
                     escala.setIdProveedor(saved.getId());
@@ -108,7 +105,6 @@ public class ProveedorService {
         } catch (Exception e) {
             logger.error("Error fetching scale from provider {}: {}",
                 saved.getId(), e.getMessage());
-            // Continue anyway - scales can be created manually later
         }
 
         return saved;

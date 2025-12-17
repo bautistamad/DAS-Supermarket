@@ -192,13 +192,12 @@ public class ProveedorIntegrationService {
 
         logger.info("Received {} products from provider {}", productosProveedor.size(), proveedorId);
 
-        // 2. Build mapping: codigoBarraProveedor → codigoBarra (internal)
-        //    Provider returns products with THEIR barcode, we need to map to OUR internal barcode
+        // 2. Crear mapa: codigoBarraProveedor → codigoBarra (internal)
         List<Producto> productosAsignados = productoRepository.findByProviderId(proveedorId);
         Map<Integer, Integer> proveedorToInternalMap = new HashMap<>();
 
         for (Producto p : productosAsignados) {
-            // Get the ProductoProveedor mapping to find codigoBarraProveedor
+            // Obtener mapam de producto proveedor para buscar codigoBarraProveedor
             ProductoProveedor mapping = productoProveedorRepository.findByProveedorAndProducto(
                     proveedorId,
                     p.getCodigoBarra()
@@ -214,26 +213,25 @@ public class ProveedorIntegrationService {
 
         logger.info("Mapped {} products for provider {}", proveedorToInternalMap.size(), proveedorId);
 
-        // 3. Sync prices for assigned products only
+        // 3. Sincronizar precios para productos asignados solamente
         for (Producto productoProveedor : productosProveedor) {
-            // productoProveedor.getCodigoBarra() contains the PROVIDER's barcode
             Integer codigoBarraInterno = proveedorToInternalMap.get(productoProveedor.getCodigoBarra());
 
             if (codigoBarraInterno == null) {
                 logger.debug("Skipping provider product {} - not mapped to internal product",
                         productoProveedor.getCodigoBarra());
-                continue; // Skip products not assigned to this provider
+                continue;
             }
 
             Float precio = extractPrecio(productoProveedor);
             if (precio == null) {
                 logger.warn("Skipping product {} - no price available", productoProveedor.getCodigoBarra());
-                continue; // Skip products without price
+                continue;
             }
 
             try {
                 Map<String, Object> syncResult = historialPrecioRepository.syncPrecio(
-                        codigoBarraInterno,  // Use internal barcode for our database
+                        codigoBarraInterno,
                         precio,
                         proveedorId
                 );
@@ -405,8 +403,8 @@ public class ProveedorIntegrationService {
             try {
                 Integer productoId = productoProveedor.getCodigoBarra();
 
-                Optional<Producto> productoExistente =  productoRepository.findByBarCode(productoProveedor.getCodigoBarra());
-                if(productoExistente.isEmpty()) {
+                Optional<Producto> productoExistente = productoRepository.findByBarCode(productoProveedor.getCodigoBarra());
+                if (productoExistente.isEmpty()) {
                     Producto p = new Producto(
                             productoProveedor.getCodigoBarra(),
                             productoProveedor.getNombre(),
@@ -415,13 +413,16 @@ public class ProveedorIntegrationService {
                             30,
                             0,
                             2
-
                     );
                     p.setEstadoId(2); // Estado 2 = Agotado (no tiene stock aún)
                     Producto saved = productoRepository.save(p);
+                    logger.info("Created new product: {} with barcode {}",
+                            productoProveedor.getNombre(), productoId);
+                    result.put("productosCreados", result.get("productosCreados") + 1);
                 }
 
                 ProductoProveedor existingMapping = productoProveedorRepository.findByProveedorAndProducto(proveedorId, productoId);
+                if (existingMapping == null) {
                     ProductoProveedor mapping = new ProductoProveedor();
                     mapping.setCodigoBarra(productoId);
                     mapping.setIdProveedor(proveedorId);
@@ -430,6 +431,10 @@ public class ProveedorIntegrationService {
                     logger.info("Created ProductoProveedor mapping: internal={}",
                             productoId);
                     result.put("productosAsociados", result.get("productosAsociados") + 1);
+                } else {
+                    logger.debug("ProductoProveedor mapping already exists for product {} with provider {}",
+                            productoId, proveedorId);
+                }
 
                 Float precio = extractPrecio(productoProveedor);
                 if (precio != null) {

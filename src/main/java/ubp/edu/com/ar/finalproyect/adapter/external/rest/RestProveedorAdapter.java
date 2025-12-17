@@ -235,6 +235,7 @@ public class RestProveedorAdapter implements ProveedorIntegration {
         Producto producto = new Producto();
         producto.setCodigoBarra(dto.getCodigoBarra());
         producto.setNombre(dto.getNombre());
+        producto.setImage(dto.getImagen());
 
         // Create a HistorialPrecio with the current price
         HistorialPrecio precio = new HistorialPrecio();
