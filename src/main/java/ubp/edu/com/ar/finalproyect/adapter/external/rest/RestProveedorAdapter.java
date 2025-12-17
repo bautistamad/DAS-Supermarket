@@ -4,17 +4,8 @@ import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.AsignarPedidoRequest;
-import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.AsignarPedidoResponse;
-import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.CancelacionPedido;
-import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.HealthResponse;
-import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.PonderacionDTO;
-import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.ProductoProveedorDTO;
-import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
-import ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion;
-import ubp.edu.com.ar.finalproyect.domain.HistorialPrecio;
-import ubp.edu.com.ar.finalproyect.domain.Pedido;
-import ubp.edu.com.ar.finalproyect.domain.Producto;
+import ubp.edu.com.ar.finalproyect.adapter.external.rest.dto.*;
+import ubp.edu.com.ar.finalproyect.domain.*;
 import ubp.edu.com.ar.finalproyect.port.ProveedorIntegration;
 import ubp.edu.com.ar.finalproyect.utils.Httpful;
 
@@ -227,8 +218,32 @@ public class RestProveedorAdapter implements ProveedorIntegration {
     }
 
     @Override
-    public Pedido consultarEstado(String apiEndpoint, String clientId, String apiKey, Integer idPedido) {
-        return null;
+    public ConsultarEstado consultarEstado(String apiEndpoint, String clientId, String apiKey, Integer idPedido) {
+        try {
+            logger.info("Fetching rating scale from provider: {} (clientId: {})", apiEndpoint, idPedido);
+
+            ConsultarEstado estado = new Httpful(apiEndpoint)
+                    .path("/api/proveedor/consultarEstado")
+                    .addQueryParam("clientId", clientId)
+                    .addQueryParam("apikey", apiKey)
+                    .addQueryParam("idPedido", idPedido.toString())
+                    .get()
+                    .execute(ConsultarEstado.class);
+
+            if (estado == null) {
+                logger.warn("Received null or empty state array from provider: {}", apiEndpoint);
+                return null;
+            }
+
+            logger.info("Successfully fetched {} scale values from provider", estado);
+
+
+            return estado;
+
+        } catch (Exception e) {
+            logger.error("Failed to fetch scale from provider endpoint: {}", apiEndpoint, e);
+            return null;
+        }
     }
 
     private Producto convertToDomain(ProductoProveedorDTO dto) {

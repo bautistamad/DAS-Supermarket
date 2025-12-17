@@ -7,9 +7,8 @@ import ubp.edu.com.ar.finalproyect.adapter.external.soap.dto.pedidos.*;
 import ubp.edu.com.ar.finalproyect.adapter.external.soap.dto.productos.*;
 import ubp.edu.com.ar.finalproyect.adapter.external.soap.dto.utils.*;
 import ubp.edu.com.ar.finalproyect.adapter.external.soap.dto.utils.AuthRequest;
-import ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion;
+import ubp.edu.com.ar.finalproyect.domain.*;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
-import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.port.ProveedorIntegration;
 
@@ -165,29 +164,30 @@ public class SoapProveedorAdapter implements ProveedorIntegration {
     }
 
     @Override
-    public Pedido consultarEstado(String apiEndpoint, String clientId, String apiKey, Integer idPedido) {
-        try {
-            logger.debug("Consulting pedido status via SOAP endpoint: {}, pedidoId: {}", apiEndpoint, idPedido);
-            PedidoWS pedidoClient = soapClientFactory.buildPedidoClient(apiEndpoint + "/ws/pedidos");
-
-            ConsultarEstadoRequest request = new ConsultarEstadoRequest();
-            request.setClientId(clientId);
-            request.setApikey(apiKey);
-            request.setIdPedido(idPedido);
-
-            ConsultarEstadoResponse response = pedidoClient.consultarEstado(request);
-
-            Pedido pedido = new Pedido();
-            pedido.setIdPedidoProveedor(Math.toIntExact(response.getIdPedido()));
-            pedido.setEstadoNombre(response.getEstado());
-            pedido.setEstadoDescripcion(response.getDescripcion());
-
-            logger.info("Pedido status consulted successfully. Estado: {}", response.getEstado());
-            return pedido;
-        } catch (Exception e) {
-            logger.error("Error consulting pedido status via SOAP endpoint {}: {}", apiEndpoint, e.getMessage(), e);
-            return null;
-        }
+    public ConsultarEstado consultarEstado(String apiEndpoint, String clientId, String apiKey, Integer idPedido) {
+//        try {
+//            logger.debug("Consulting pedido status via SOAP endpoint: {}, pedidoId: {}", apiEndpoint, idPedido);
+//            PedidoWS pedidoClient = soapClientFactory.buildPedidoClient(apiEndpoint + "/ws/pedidos");
+//
+//            ConsultarEstadoRequest request = new ConsultarEstadoRequest();
+//            request.setClientId(clientId);
+//            request.setApikey(apiKey);
+//            request.setIdPedido(idPedido);
+//
+//            ConsultarEstadoResponse response = pedidoClient.consultarEstado(request);
+//
+//            Pedido pedido = new Pedido();
+//            pedido.setIdPedidoProveedor(Math.toIntExact(response.getIdPedido()));
+//            pedido.setEstadoNombre(response.getEstado());
+//            pedido.setEstadoDescripcion(response.getDescripcion());
+//
+//            logger.info("Pedido status consulted successfully. Estado: {}", response.getEstado());
+//            return pedido;
+//        } catch (Exception e) {
+//            logger.error("Error consulting pedido status via SOAP endpoint {}: {}", apiEndpoint, e.getMessage(), e);
+//            return null;
+//        }
+        return null;
     }
 
     @Override

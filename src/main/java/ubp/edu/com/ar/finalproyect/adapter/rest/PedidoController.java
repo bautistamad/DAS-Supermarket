@@ -8,6 +8,7 @@ import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
 import ubp.edu.com.ar.finalproyect.service.PedidoService;
 import ubp.edu.com.ar.finalproyect.service.ProveedorIntegrationService;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -124,8 +125,12 @@ public class PedidoController {
 
     // GET /api/pedidos/{id}/status - Query order status from provider
     @GetMapping("/{id}/status")
-    public ResponseEntity<Pedido> getOrderStatus(@PathVariable Integer id) {
+    public ResponseEntity<Map<String,Object>> getOrderStatus(@PathVariable Integer id) {
         Pedido pedido = pedidoService.consultarEstadoPedido(id);
-        return ResponseEntity.ok(pedido);
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("estado", pedido.getEstadoNombre());
+        map.put("pedidoId", pedido.getId());
+        return ResponseEntity.ok(map);
     }
 }

@@ -4,10 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ubp.edu.com.ar.finalproyect.domain.Escala;
-import ubp.edu.com.ar.finalproyect.domain.Pedido;
-import ubp.edu.com.ar.finalproyect.domain.PedidoProducto;
-import ubp.edu.com.ar.finalproyect.domain.Proveedor;
+import ubp.edu.com.ar.finalproyect.domain.*;
 import ubp.edu.com.ar.finalproyect.exception.EscalaNotFoundException;
 import ubp.edu.com.ar.finalproyect.exception.PedidoNotFoundException;
 import ubp.edu.com.ar.finalproyect.port.EscalaRepository;
@@ -190,9 +187,9 @@ public class PedidoService {
         Pedido pedido = repository.findById(pedidoId)
                 .orElseThrow(() -> new PedidoNotFoundException(pedidoId));
 
-        Pedido estadoProveedor = integrationService.consultarEstadoPedido(
+        ConsultarEstado estadoProveedor = integrationService.consultarEstadoPedido(
                 pedido.getProveedorId(),
-                pedidoId
+                pedido.getIdPedidoProveedor()
         );
 
         if (estadoProveedor == null) {
@@ -203,23 +200,23 @@ public class PedidoService {
         }
 
         logger.info("Provider returned status for order {}: {}",
-                pedidoId, estadoProveedor.getEstadoNombre());
+                estadoProveedor.getIdPedido(), estadoProveedor.getNombreEstado());
 
-        Integer nuevoEstadoId = mapProviderStatusToEstadoId(estadoProveedor.getEstadoNombre());
+        Integer nuevoEstadoId = mapProviderStatusToEstadoId(estadoProveedor.getNombreEstado());
 
         if (nuevoEstadoId != null && !nuevoEstadoId.equals(pedido.getEstadoId())) {
             logger.info("Updating order {} status from {} to {}",
                     pedidoId, pedido.getEstadoId(), nuevoEstadoId);
 
             pedido.setEstadoId(nuevoEstadoId);
-            pedido.setEstadoNombre(estadoProveedor.getEstadoNombre());
-            pedido.setEstadoDescripcion(estadoProveedor.getEstadoDescripcion());
+            pedido.setEstadoNombre(estadoProveedor.getNombreEstado());
+            pedido.setEstadoDescripcion(estadoProveedor.getNombreEstado());
 
             // Update in database
             Pedido updated = repository.update(pedido);
 
             logger.info("Successfully updated order {} status to {}",
-                    pedidoId, estadoProveedor.getEstadoNombre());
+                    pedidoId, estadoProveedor.getNombreEstado());
 
             return updated;
         } else {
@@ -228,21 +225,16 @@ public class PedidoService {
         }
     }
 
-    /**
-     * Map provider's status string to our internal EstadoPedido ID
-     * Provider statuses: "Asignado", "En Proceso", "En camino", "Entregado", "Cancelado"
-     * Our statuses: 1=Pendiente, 2=En Proceso, 3=Enviado, 4=Entregado, 5=Cancelado
-     */
     private Integer mapProviderStatusToEstadoId(String providerStatus) {
         if (providerStatus == null) {
             return null;
         }
 
         return switch (providerStatus.toLowerCase()) {
-            case "asignado" -> 2;           // En Proceso
+            case "asignado" -> 1;           // En Proceso
             case "en proceso" -> 2;         // En Proceso
             case "en camino" -> 3;          // Enviado
-            case "entregado" -> 4;          // Entregado
+            case "finalizado" -> 4;          // Entregado
             case "cancelado" -> 5;          // Cancelado
             default -> {
                 logger.warn("Unknown provider status: {}", providerStatus);

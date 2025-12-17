@@ -4,11 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion;
-import ubp.edu.com.ar.finalproyect.domain.Pedido;
-import ubp.edu.com.ar.finalproyect.domain.Producto;
-import ubp.edu.com.ar.finalproyect.domain.ProductoProveedor;
-import ubp.edu.com.ar.finalproyect.domain.Proveedor;
+import ubp.edu.com.ar.finalproyect.domain.*;
 import ubp.edu.com.ar.finalproyect.exception.ProveedorNotFoundException;
 import ubp.edu.com.ar.finalproyect.port.HistorialPrecioRepository;
 import ubp.edu.com.ar.finalproyect.port.ProductoProveedorRepository;
@@ -74,14 +70,14 @@ public class ProveedorIntegrationService {
         }
     }
 
-    public Pedido consultarEstadoPedido(Integer proveedorId, Integer pedidoId) {
+    public ConsultarEstado consultarEstadoPedido(Integer proveedorId, Integer pedidoId) {
         logger.info("Querying status for order {} from provider ID: {}", pedidoId, proveedorId);
 
         Proveedor proveedor = getProveedor(proveedorId);
 
         try {
             ProveedorIntegration adapter = factory.getAdapter(proveedor.getTipoServicio());
-            Pedido pedidoEstado = adapter.consultarEstado(
+            ConsultarEstado pedidoEstado = adapter.consultarEstado(
                 proveedor.getApiEndpoint(),
                 proveedor.getClientId(),
                 proveedor.getApiKey(),
@@ -89,8 +85,8 @@ public class ProveedorIntegrationService {
             );
 
             if (pedidoEstado != null) {
-                logger.info("Successfully queried status for order {} from provider {}: {}",
-                    pedidoId, proveedorId, pedidoEstado.getEstadoNombre());
+                logger.info("Successfully queried status for order from provider {}: {}",
+                    pedidoEstado.getIdPedido(), pedidoEstado.getNombreEstado());
             } else {
                 logger.warn("Failed to query status for order {} from provider {}. Provider returned null.",
                     pedidoId, proveedorId);

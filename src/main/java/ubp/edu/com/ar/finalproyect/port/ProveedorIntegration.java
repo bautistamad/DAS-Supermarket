@@ -1,5 +1,6 @@
 package ubp.edu.com.ar.finalproyect.port;
 
+import ubp.edu.com.ar.finalproyect.domain.ConsultarEstado;
 import ubp.edu.com.ar.finalproyect.domain.EscalaDefinicion;
 import ubp.edu.com.ar.finalproyect.domain.Producto;
 import ubp.edu.com.ar.finalproyect.domain.Pedido;
@@ -18,7 +19,7 @@ public interface ProveedorIntegration {
 
     Pedido asignarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido);
 
-    Pedido consultarEstado(String apiEndpoint, String clientId, String apiKey, Integer idPedido);
+    ConsultarEstado consultarEstado(String apiEndpoint, String clientId, String apiKey, Integer idPedido);
 
     Pedido cancelarPedido(String apiEndpoint, String clientId, String apiKey, Integer idPedido);
 
