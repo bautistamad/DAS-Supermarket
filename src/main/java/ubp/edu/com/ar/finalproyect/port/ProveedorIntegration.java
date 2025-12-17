@@ -25,5 +25,5 @@ public interface ProveedorIntegration {
     boolean enviarEvaluacion(String apiEndpoint, String clientId, String apiKey,
                             Integer pedidoId, Integer puntuacion);
 
-    Map<String, Object> estimarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido);
+    Map<String, Object> estimarPedido(String apiEndpoint, String clientId, String apiKey);
 }

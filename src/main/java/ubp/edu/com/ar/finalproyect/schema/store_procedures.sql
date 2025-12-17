@@ -1201,6 +1201,7 @@ GO
 -- =============================================
 -- Find Products with Low Stock (below minimum)
 -- Returns products where actualStock <= stockMinimo
+-- Excludes products already in active orders (estado 1, 2, 3)
 -- Used for automatic order generation
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_find_productos_bajo_stock
@@ -1222,6 +1223,13 @@ BEGIN
     LEFT JOIN EstadoProducto ep ON p.estado = ep.id
     WHERE p.stockActual <= p.stockMinimo
       AND p.stockMaximo > p.stockActual  -- Only products that can be restocked
+      -- Exclude products already in active orders (Pendiente, En Proceso, Enviado)
+      AND p.codigoBarra NOT IN (
+          SELECT DISTINCT pp.codigoBarra
+          FROM PedidoProducto pp
+          INNER JOIN Pedido ped ON pp.idPedido = ped.id
+          WHERE ped.estado IN (1, 2, 3)  -- 1=Pendiente, 2=En Proceso, 3=Enviado
+      )
     ORDER BY p.stockActual ASC;  -- Lowest stock first
 END
 GO

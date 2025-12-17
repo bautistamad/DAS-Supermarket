@@ -241,7 +241,7 @@ public class SoapProveedorAdapter implements ProveedorIntegration {
     }
 
     @Override
-    public Map<String, Object> estimarPedido(String apiEndpoint, String clientId, String apiKey, Pedido pedido) {
+    public Map<String, Object> estimarPedido(String apiEndpoint, String clientId, String apiKey) {
         try {
             logger.debug("Estimating pedido via SOAP endpoint: {}", apiEndpoint);
             PedidoWS pedidoClient = soapClientFactory.buildPedidoClient(apiEndpoint + "/ws/pedidos");
@@ -250,36 +250,12 @@ public class SoapProveedorAdapter implements ProveedorIntegration {
             request.setClientId(clientId);
             request.setApikey(apiKey);
 
-            ubp.edu.com.ar.finalproyect.adapter.external.soap.dto.pedidos.Pedido soapPedido =
-                new ubp.edu.com.ar.finalproyect.adapter.external.soap.dto.pedidos.Pedido();
-
-            for (PedidoProducto producto : pedido.getProductos()) {
-                ProductoPedido soapProducto = new ProductoPedido();
-                soapProducto.setCodigoBarra(producto.getCodigoBarraProveedor() != null ?
-                    producto.getCodigoBarraProveedor() : producto.getCodigoBarra());
-                soapProducto.setCantidad(producto.getCantidad());
-                soapPedido.getProductos().add(soapProducto);
-            }
-
-            request.setPedido(soapPedido);
-
             EstimarPedidoResponse response = pedidoClient.estimarPedido(request);
 
             Map<String, Object> estimacion = new HashMap<>();
             estimacion.put("fechaEstimada", response.getFechaEstimada());
-            estimacion.put("precioEstimadoTotal", response.getPrecioEstimadoTotal());
 
-            List<Map<String, Object>> productosDisponibilidad = new ArrayList<>();
-            for (ProductoDisponibilidad prod : response.getProductos()) {
-                Map<String, Object> prodMap = new HashMap<>();
-                prodMap.put("codigoBarra", prod.getCodigoBarra());
-                prodMap.put("nombre", prod.getNombre());
-                prodMap.put("available", prod.isAvailable());
-                productosDisponibilidad.add(prodMap);
-            }
-            estimacion.put("productos", productosDisponibilidad);
-
-            logger.info("Pedido estimated successfully. Total: {}", response.getPrecioEstimadoTotal());
+            logger.info("Pedido estimated successfully. Fecha estimada: {}", response.getFechaEstimada());
             return estimacion;
         } catch (Exception e) {
             logger.error("Error estimating pedido via SOAP endpoint {}: {}", apiEndpoint, e.getMessage(), e);

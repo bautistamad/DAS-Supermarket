@@ -50,6 +50,12 @@ public class AutoPedidoService {
     public Map<String, Object> generarPedidoAutomaticoOptimizado() {
         List<Producto> productosBajos = productoRepository.findProductosBajoStock();
 
+        if (productosBajos.isEmpty()) {
+            return buildResponse(false, "No se encuentran productos a reestockear", 0);
+        }
+        System.out.println("DIOS AYUDANOS");
+        System.out.println(productosBajos.size());
+
         List<Proveedor> proveedoresActivos = proveedorRepository.findAll().stream()
                 .filter(p -> p.getActivo() == true)
                 .toList();
@@ -195,7 +201,10 @@ public class AutoPedidoService {
             Pedido pedido = new Pedido();
             pedido.setProveedorId(entry.getKey());
             pedido.setEstadoId(1);
-            pedido.setFechaEstimada(LocalDateTime.now().plusDays(7));
+
+            // Obtener fecha estimada del proveedor
+            LocalDateTime fechaEstimada = proveedorIntegrationService.estimarPedidoWithProveedor(entry.getKey());
+            pedido.setFechaEstimada(fechaEstimada);
 
             List<PedidoProducto> lineas = entry.getValue().stream().map(a -> {
                 PedidoProducto pp = new PedidoProducto();

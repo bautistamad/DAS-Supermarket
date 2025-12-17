@@ -16,6 +16,7 @@ import ubp.edu.com.ar.finalproyect.port.ProductoRepository;
 import ubp.edu.com.ar.finalproyect.port.ProveedorIntegration;
 import ubp.edu.com.ar.finalproyect.port.ProveedorRepository;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -345,8 +346,8 @@ public class ProveedorIntegrationService {
     }
 
 
-    public Map<String, Object> estimarPedidoWithProveedor(Integer proveedorId, Pedido pedido) {
-        logger.info("Estimating order with provider ID: {}", proveedorId);
+    public LocalDateTime estimarPedidoWithProveedor(Integer proveedorId) {
+        logger.info("Estimating order delivery date with provider ID: {}", proveedorId);
 
         Proveedor proveedor = getProveedor(proveedorId);
 
@@ -355,24 +356,26 @@ public class ProveedorIntegrationService {
             Map<String, Object> estimacion = adapter.estimarPedido(
                     proveedor.getApiEndpoint(),
                     proveedor.getClientId(),
-                    proveedor.getApiKey(),
-                    pedido
+                    proveedor.getApiKey()
             );
 
-            if (estimacion != null) {
-                logger.info("Successfully estimated order with provider {}. Total price: {}",
-                        proveedorId, estimacion.get("precioEstimadoTotal"));
-            } else {
-                logger.warn("Failed to estimate order with provider {}. Provider did not return estimation.",
-                        proveedorId);
+            if (estimacion == null || !estimacion.containsKey("fechaEstimada")) {
+                logger.warn("Provider {} did not return estimated delivery date", proveedorId);
+                return LocalDateTime.now().plusDays(3); // Fallback to default
             }
 
-            return estimacion;
+            String fechaEstimadaStr = (String) estimacion.get("fechaEstimada");
+            LocalDateTime fechaEstimada = LocalDateTime.parse(fechaEstimadaStr);
+
+            logger.info("Successfully estimated delivery date with provider {}: {}",
+                    proveedorId, fechaEstimada);
+
+            return fechaEstimada;
 
         } catch (Exception e) {
-            logger.error("Exception occurred while estimating order with provider {}",
+            logger.error("Exception occurred while estimating order with provider {}. Using default estimation.",
                     proveedorId, e);
-            return null;
+            return LocalDateTime.now().plusDays(7); // Fallback to default on error
         }
     }
 
